@@ -77,6 +77,7 @@
   is experimental. It reads data from BigQuery by exporting data to Avro files, and reading those files. It also supports
   reading data by exporting to JSON files. This has small differences in behavior for Time and Date-related fields. See
   Pydoc for more information.
+* Support for reading from HTTP / HTTPS URLs added (Python) ([BEAM-10101](https://issues.apache.org/jira/browse/BEAM-10101)).
 
 ## New Features / Improvements
 
