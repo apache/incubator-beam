@@ -25,7 +25,6 @@ from __future__ import absolute_import
 import errno
 import io
 import logging
-import os
 import re
 import tempfile
 import time
@@ -60,10 +59,10 @@ def parse_azfs_path(azfs_path, blob_optional=False, get_account=False):
   """Return the storage account, the container and
   blob names of the given azfs:// path.
   """
-  match = re.match(
-      '^azfs://([a-z0-9]{3,24})/([a-z0-9](?![a-z0-9-]*--[a-z0-9-]*)'
-      '[a-z0-9-]{1,61}[a-z0-9])/(.*)$',
-      azfs_path)
+  regex = (
+      '^azfs://([a-z0-9.]{3,24})/([a-z0-9](?![a-z0-9-]*--[a-z0-9-]*)'
+      '[a-z0-9-]{1,61}[a-z0-9])/(.*)$')
+  match = re.match(regex, azfs_path)
   if match is None or (match.group(3) == '' and not blob_optional):
     raise ValueError(
         'Azure Blob Storage path must be in the form '
@@ -76,22 +75,19 @@ def parse_azfs_path(azfs_path, blob_optional=False, get_account=False):
   return result
 
 
-def get_azfs_url(storage_account, container, blob=''):
+def get_azfs_url(storage_account, container, blob='', azurite=False):
   """Returns the url in the form of
    https://account.blob.core.windows.net/container/blob-name
   """
-  return 'https://' + storage_account + '.blob.core.windows.net/' + \
-          container + '/' + blob
-
-
-class Blob():
-  """A Blob in Azure Blob Storage."""
-  def __init__(self, etag, name, last_updated, size, mime_type):
-    self.etag = etag
-    self.name = name
-    self.last_updated = last_updated
-    self.size = size
-    self.mime_type = mime_type
+  # TODO(pabloem/AldairCoronel): Rather than receive a boolean azurite flag,
+  # it would be best to receive an azurite_endpoint variable to customize the
+  # endpoint in case 127.0.0.1:10000 is not the correct one.
+  if azurite:
+    return "http://127.0.0.1:10000/" + storage_account + '/' + container \
+        + '/' + blob
+  else:
+    return 'https://' + storage_account + '.blob.core.windows.net/' + \
+        container + '/' + blob
 
 
 class BlobStorageIOError(IOError, retry.PermanentException):
@@ -108,12 +104,9 @@ class BlobStorageError(Exception):
 
 class BlobStorageIO(object):
   """Azure Blob Storage I/O client."""
-  def __init__(self, client=None):
-    connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
-    if client is None:
-      self.client = BlobServiceClient.from_connection_string(connect_str)
-    else:
-      self.client = client
+  def __init__(self, connect_str=None, azurite=False):
+    self.client = BlobServiceClient.from_connection_string(connect_str)
+    self.azurite = azurite
     if not AZURE_DEPS_INSTALLED:
       raise RuntimeError('Azure dependencies are not installed. Unable to run.')
 
@@ -169,7 +162,8 @@ class BlobStorageIO(object):
         src, get_account=True)
     dest_container, dest_blob = parse_azfs_path(dest)
 
-    source_blob = get_azfs_url(src_storage_account, src_container, src_blob)
+    source_blob = get_azfs_url(
+        src_storage_account, src_container, src_blob, azurite=self.azurite)
     copied_blob = self.client.get_blob_client(dest_container, dest_blob)
 
     try:
@@ -557,7 +551,6 @@ class BlobStorageIO(object):
         results[(container, blob)] = response
       except ResourceNotFoundError as e:
         results[(container, blob)] = e.status_code
-
     return results
 
   @retry.with_exponential_backoff(

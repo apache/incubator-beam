@@ -46,6 +46,7 @@ __all__ = [
     'TypeOptions',
     'DirectOptions',
     'GoogleCloudOptions',
+    'AzureFileSystemOptions',
     'HadoopFileSystemOptions',
     'WorkerOptions',
     'DebugOptions',
@@ -689,6 +690,21 @@ class GoogleCloudOptions(PipelineOptions):
             'are mutually exclusive.')
 
     return errors
+
+
+class AzureFileSystemOptions(PipelineOptions):
+  """``AzureFileSystemOptions`` connection options."""
+  @classmethod
+  def _add_argparse_args(cls, parser):
+    parser.add_argument(
+        '--azfs_connection_string',
+        default=None,
+        help=('Azure blob storage connection string.'))
+    parser.add_argument(
+        '--use_local_azurite',
+        default=False,
+        action='store_true',
+        help=('If set, Azurite will be used.'))
 
 
 class HadoopFileSystemOptions(PipelineOptions):

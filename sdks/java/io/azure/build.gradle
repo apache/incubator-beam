@@ -42,3 +42,27 @@ dependencies {
   testCompile library.java.junit
   testRuntimeOnly library.java.slf4j_jdk14
 }
+
+task CreateAzuriteContainer(type: Exec) {
+  standardOutput = new ByteArrayOutputStream()
+  ext.output = {
+    return standardOutput.toString().trim()
+  }
+  commandLine 'docker', 'create', '-p=10000:10000',
+  'mcr.microsoft.com/azure-storage/azurite'
+}
+
+task StartAzuriteContainer(type: Exec) {
+  dependsOn CreateAzuriteContainer
+  commandLine 'docker', 'start', 
+    "${->CreateAzuriteContainer.output()}"
+}
+
+task StopAzuriteContainer(type: Exec) {
+  commandLine 'docker', 'rm', '-f', "${->CreateAzuriteContainer.output()}"
+}
+
+task AzureLocalIT(type: Test) {
+  dependsOn StartAzuriteContainer
+  finalizedBy StopAzuriteContainer
+}

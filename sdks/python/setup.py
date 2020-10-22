@@ -154,18 +154,18 @@ REQUIRED_PACKAGES = [
     'oauth2client>=2.0.1,<5',
     'protobuf>=3.12.2,<4',
     # [BEAM-6287] pyarrow is not supported on Windows for Python 2
-    ('pyarrow>=0.15.1,<0.18.0; python_version >= "3.0" or '
-     'platform_system != "Windows"'),
+    (
+        'pyarrow>=0.15.1,<0.18.0; python_version >= "3.0" or '
+        'platform_system != "Windows"'),
     'pydot>=1.2.0,<2',
     'python-dateutil>=2.8.0,<3',
-    'pytz>=2018.3',
-    # [BEAM-5628] Beam VCF IO is not supported in Python 3.
+    'pytz>=2018.3',  # [BEAM-5628] Beam VCF IO is not supported in Python 3.
     'pyvcf>=0.6.8,<0.7.0; python_version < "3.0"',
     # fixes and additions have been made since typing 3.5
     'requests>=2.24.0,<3.0.0',
     'typing>=3.7.0,<3.8.0; python_full_version < "3.5.3"',
     'typing-extensions>=3.7.0,<3.8.0',
-    ]
+]
 
 # [BEAM-8181] pyarrow cannot be installed on 32-bit Windows platforms.
 if sys.platform == 'win32' and sys.maxsize <= 2**32:
@@ -196,7 +196,7 @@ REQUIRED_TEST_PACKAGES = [
     'psycopg2-binary>=2.8.5,<3.0.0; python_version >= "3.5"',
     # testcontainers is used only for running xlang jdbc test so limit to Py3
     'testcontainers>=3.0.3,<4.0.0; python_version >= "3.5"',
-    ]
+]
 
 GCP_REQUIREMENTS = [
     'cachetools>=3.1.0,<5',
@@ -240,14 +240,13 @@ INTERACTIVE_BEAM_TEST = [
 ]
 
 AWS_REQUIREMENTS = [
-    'boto3 >=1.9'
+  'boto3 >=1.9'
 ]
 
 AZURE_REQUIREMENTS = [
     'azure-storage-blob >=12.3.2',
     'azure-core >=1.7.0',
 ]
-
 
 
 # We must generate protos after setup_requires are installed.
@@ -272,8 +271,8 @@ python_requires = '>=3.6'
 if sys.version_info.major == 3 and sys.version_info.minor >= 9:
   warnings.warn(
       'This version of Apache Beam has not been sufficiently tested on '
-      'Python %s.%s. You may encounter bugs or missing features.' % (
-          sys.version_info.major, sys.version_info.minor))
+      'Python %s.%s. You may encounter bugs or missing features.' %
+      (sys.version_info.major, sys.version_info.minor))
 
 setuptools.setup(
     name=PACKAGE_NAME,
