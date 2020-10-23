@@ -53,6 +53,8 @@ import org.apache.beam.vendor.calcite.v1_20_0.org.apache.calcite.tools.Program;
 import org.apache.beam.vendor.calcite.v1_20_0.org.apache.calcite.util.Util;
 
 /** ZetaSQLPlannerImpl. */
+// TODO: Fix Later
+@SuppressWarnings("nullness")
 class ZetaSQLPlannerImpl {
   private final SchemaPlus defaultSchemaPlus;
 

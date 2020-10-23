@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.extensions.sql.zetasql.translation;
 
+import static org.apache.beam.sdk.util.Preconditions.checkArgumentNotNull;
+
 import com.google.zetasql.resolvedast.ResolvedNode;
 import com.google.zetasql.resolvedast.ResolvedNodes.ResolvedWithRefScan;
 import java.util.Collections;
@@ -41,7 +43,8 @@ class WithRefScanConverter extends RelConverter<ResolvedWithRefScan> {
     // (e.g. if the WITH query root is a projection it will go through ProjectScanConverter)
     // and will reach the convert() method below as an already converted rel node.
     return Collections.singletonList(
-        getTrait().withEntries.get(zetaNode.getWithQueryName()).getWithSubquery());
+        checkArgumentNotNull(getTrait().withEntries.get(zetaNode.getWithQueryName()))
+            .getWithSubquery());
   }
 
   @Override

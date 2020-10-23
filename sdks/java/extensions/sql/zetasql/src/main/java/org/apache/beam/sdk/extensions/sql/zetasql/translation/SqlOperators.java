@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.extensions.sql.zetasql.translation;
 
+import static org.apache.beam.sdk.util.Preconditions.checkArgumentNotNull;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -132,6 +134,7 @@ public class SqlOperators {
   public static final SqlOperator DATE_OP =
       createUdfOperator("DATE", BeamBuiltinMethods.DATE_METHOD);
 
+  @SuppressWarnings("nullness")
   public static final SqlUserDefinedFunction CAST_OP =
       new SqlUserDefinedFunction(
           new SqlIdentifier("CAST", SqlParserPos.ZERO),
@@ -145,6 +148,7 @@ public class SqlOperators {
    * Create a dummy SqlFunction of type OTHER_FUNCTION from given function name and return type.
    * These functions will be unparsed in BeamZetaSqlCalcRel and then executed by ZetaSQL evaluator.
    */
+  @SuppressWarnings("nullness")
   public static SqlFunction createZetaSqlFunction(String name, SqlTypeName returnType) {
     return new SqlFunction(
         name,
@@ -155,6 +159,7 @@ public class SqlOperators {
         SqlFunctionCategory.USER_DEFINED_FUNCTION);
   }
 
+  @SuppressWarnings("nullness")
   private static SqlUserDefinedAggFunction createUdafOperator(
       String name, SqlReturnTypeInference returnTypeInference, AggregateFunction function) {
     return new SqlUserDefinedAggFunction(
@@ -169,6 +174,7 @@ public class SqlOperators {
         createTypeFactory());
   }
 
+  @SuppressWarnings("nullness")
   private static SqlUserDefinedFunction createUdfOperator(
       String name,
       Class<?> methodClass,
@@ -251,7 +257,7 @@ public class SqlOperators {
 
   private static List<RelDataType> toSql(
       final RelDataTypeFactory typeFactory, List<RelDataType> types) {
-    return Lists.transform(types, type -> toSql(typeFactory, type));
+    return Lists.transform(types, type -> toSql(typeFactory, checkArgumentNotNull(type)));
   }
 
   private static RelDataType toSql(RelDataTypeFactory typeFactory, RelDataType type) {

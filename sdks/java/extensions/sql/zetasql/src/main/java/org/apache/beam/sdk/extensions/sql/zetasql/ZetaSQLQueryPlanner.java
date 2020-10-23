@@ -60,6 +60,7 @@ import org.apache.beam.vendor.calcite.v1_20_0.org.apache.calcite.tools.Framework
 import org.apache.beam.vendor.calcite.v1_20_0.org.apache.calcite.tools.RuleSet;
 import org.apache.beam.vendor.calcite.v1_20_0.org.apache.calcite.tools.RuleSets;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableList;
+import org.checkerframework.checker.initialization.qual.UnderInitialization;
 
 /** ZetaSQLQueryPlanner. */
 public class ZetaSQLQueryPlanner implements QueryPlanner {
@@ -128,7 +129,8 @@ public class ZetaSQLQueryPlanner implements QueryPlanner {
     return plannerImpl.getDefaultTimezone();
   }
 
-  public void setDefaultTimezone(String timezone) {
+  public void setDefaultTimezone(
+      @UnderInitialization(ZetaSQLQueryPlanner.class) ZetaSQLQueryPlanner this, String timezone) {
     plannerImpl.setDefaultTimezone(timezone);
   }
 
@@ -197,8 +199,11 @@ public class ZetaSQLQueryPlanner implements QueryPlanner {
             .setQuoting(config.quoting())
             .setConformance(config.conformance())
             .setCaseSensitive(config.caseSensitive());
+
+    @SuppressWarnings("argument.type.incompatible")
     final SqlParserImplFactory parserFactory =
         config.parserFactory(SqlParserImplFactory.class, null);
+
     if (parserFactory != null) {
       parserConfig.setParserFactory(parserFactory);
     }

@@ -314,7 +314,7 @@ public final class ZetaSqlCalciteTranslationUtils {
     if (timeUnit == null) {
       throw new UnsupportedOperationException("Unknown ZetaSQL Enum value: " + value.getEnumName());
     }
-    return rexBuilder.makeFlag(TimeUnitRange.of(timeUnit, null));
+    return rexBuilder.makeFlag(TimeUnitRange.of(timeUnit, timeUnit));
   }
 
   private static DateString dateValueToDateString(Value value) {

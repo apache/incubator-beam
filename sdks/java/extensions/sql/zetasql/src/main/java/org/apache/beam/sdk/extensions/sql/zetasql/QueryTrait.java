@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.beam.sdk.extensions.sql.zetasql.TableResolution.SimpleTableWithPath;
+import org.apache.beam.sdk.util.Preconditions;
 
 /** QueryTrait. */
 public class QueryTrait {
@@ -63,7 +64,9 @@ public class QueryTrait {
         isTableResolved(table),
         "Attempting to get a path of an unresolved table. Resolve and add the table first: %s",
         table.getFullName());
-    return resolvedTables.get(table.getId()).getPath();
+    SimpleTableWithPath tableWithPath =
+        Preconditions.checkArgumentNotNull(resolvedTables.get(table.getId()));
+    return tableWithPath.getPath();
   }
 
   public List<String> retrieveFieldNames(List<ResolvedColumn> resolvedColumnList) {

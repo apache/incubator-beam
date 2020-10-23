@@ -17,6 +17,8 @@
  */
 package org.apache.beam.sdk.extensions.sql.zetasql.translation;
 
+import static org.apache.beam.sdk.util.Preconditions.checkArgumentNotNull;
+
 import com.google.zetasql.resolvedast.ResolvedNode;
 import com.google.zetasql.resolvedast.ResolvedNodes.ResolvedLimitOffsetScan;
 import com.google.zetasql.resolvedast.ResolvedNodes.ResolvedOrderByScan;
@@ -66,6 +68,7 @@ class LimitOffsetScanToLimitConverter extends RelConverter<ResolvedLimitOffsetSc
                 ImmutableMap.of());
 
     // offset or fetch being RexDynamicParam means it is NULL (the only param supported currently)
+    offset = checkArgumentNotNull(offset);
     if (offset instanceof RexDynamicParam
         || RexLiteral.isNullLiteral(offset)
         || fetch instanceof RexDynamicParam

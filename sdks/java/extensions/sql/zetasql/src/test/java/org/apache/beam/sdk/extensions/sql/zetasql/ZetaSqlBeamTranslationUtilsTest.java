@@ -33,6 +33,7 @@ import java.util.Arrays;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.schemas.Schema.FieldType;
 import org.apache.beam.sdk.schemas.logicaltypes.SqlTypes;
+import org.apache.beam.sdk.util.Preconditions;
 import org.apache.beam.sdk.values.Row;
 import org.joda.time.Instant;
 import org.junit.Test;
@@ -143,7 +144,7 @@ public class ZetaSqlBeamTranslationUtilsTest {
 
   @Test
   public void testZetaSqlValueToJavaObject() {
-    assertEquals(
-        ZetaSqlBeamTranslationUtils.toBeamObject(TEST_VALUE, TEST_FIELD_TYPE, true), TEST_ROW);
+    Object object = ZetaSqlBeamTranslationUtils.toBeamObject(TEST_VALUE, TEST_FIELD_TYPE, true);
+    assertEquals(Preconditions.checkArgumentNotNull(object), TEST_ROW);
   }
 }
