@@ -118,14 +118,11 @@ def dataflowPostCommitTempRootKms = project.findProperty('dataflowTempRootKms') 
 def dataflowUploadTemp = project.findProperty('dataflowTempRoot') ?: 'gs://temp-storage-for-upload-tests'
 def testFilesToStage = project.findProperty('filesToStage') ?: 'test.txt'
 def dataflowLegacyWorkerJar = project.findProperty('dataflowWorkerJar') ?: project(":runners:google-cloud-dataflow-java:worker:legacy-worker").shadowJar.archivePath
-def dataflowFnApiWorkerJar = project.findProperty('dataflowWorkerJar') ?: project(":runners:google-cloud-dataflow-java:worker").shadowJar.archivePath
 def dataflowKmsKey = project.findProperty('dataflowKmsKey') ?: "projects/apache-beam-testing/locations/global/keyRings/beam-it/cryptoKeys/test"
 
 def dockerImageRoot = project.findProperty('dockerImageRoot') ?: "us.gcr.io/${dataflowProject}/java-postcommit-it"
 def dockerImageContainer = "${dockerImageRoot}/java"
 def dockerTag = new Date().format('yyyyMMddHHmmss')
-// If -PuseExecutableStage is set, the use_executable_stage_bundle_execution wil be enabled.
-def fnapiExperiments = project.hasProperty('useExecutableStage') ? 'beam_fn_api,beam_fn_api_use_deprecated_read,use_executable_stage_bundle_execution' : "beam_fn_api,beam_fn_api_use_deprecated_read"
 ext.dockerImageName = "${dockerImageContainer}:${dockerTag}"
 
 def legacyPipelineOptions = [
@@ -137,11 +134,9 @@ def legacyPipelineOptions = [
   "--workerHarnessContainerImage=",
 ]
 
-
-def fnApiPipelineOptions = [
-  "--dataflowWorkerJar=${dataflowFnApiWorkerJar}",
+def runnerV2PipelineOptions = [
   "--workerHarnessContainerImage=${dockerImageContainer}:${dockerTag}",
-  "--experiments=${fnapiExperiments}",
+  "--experiments=beam_fn_api,use_unified_worker",
 ]
 
 def commonExcludeCategories = [
@@ -240,19 +235,6 @@ afterEvaluate {
   }
 }
 
-task printFnApiPipelineOptions {
-  group = "Help"
-  description = "Prints to the console extra pipeline options needed to run a Dataflow pipeline using portability"
-
-  dependsOn ":runners:google-cloud-dataflow-java:worker:shadowJar"
-  dependsOn buildAndPushDockerContainer
-
-  doLast {
-    println "To run a Dataflow job with portability, add the following pipeline options to your command-line:"
-    println fnApiPipelineOptions.join(' ')
-  }
-}
-
 task validatesRunner {
   group = "Verification"
   description "Validates Dataflow runner"
@@ -283,10 +265,8 @@ task validatesRunnerV2Test(type: Test) {
           "--runner=TestDataflowRunner",
           "--project=${dataflowProject}",
           "--region=${dataflowRegion}",
-          "--tempRoot=${dataflowValidatesTempRoot}",
-          "--workerHarnessContainerImage=${dockerImageContainer}:${dockerTag}",
-          "--experiments=beam_fn_api,use_unified_worker",
-  ])
+          "--tempRoot=${dataflowValidatesTempRoot}",] + runnerV2PipelineOptions
+  )
 
   // Increase test parallelism up to the number of Gradle workers. By default this is equal
   // to the number of CPU cores, but can be increased by setting --max-workers=N.
@@ -420,7 +400,7 @@ task googleCloudPlatformLegacyWorkerKmsIntegrationTest(type: Test) {
   }
 }
 
-task googleCloudPlatformFnApiWorkerIntegrationTest(type: Test) {
+task googleCloudPlatformRunnerV2IntegrationTest(type: Test) {
   group = "Verification"
   dependsOn ":runners:google-cloud-dataflow-java:worker:shadowJar"
   dependsOn buildAndPushDockerContainer
@@ -429,7 +409,7 @@ task googleCloudPlatformFnApiWorkerIntegrationTest(type: Test) {
           "--runner=TestDataflowRunner",
           "--project=${dataflowProject}",
           "--region=${dataflowRegion}",
-          "--tempRoot=${dataflowPostCommitTempRoot}"] + fnApiPipelineOptions
+          "--tempRoot=${dataflowPostCommitTempRoot}"] + runnerV2PipelineOptions
   )
 
   include '**/*IT.class'
@@ -476,9 +456,7 @@ task examplesJavaLegacyWorkerIntegrationTest(type: Test) {
   useJUnit { }
 }
 
-// For fn-api runner, only run the IT can be passed for now.
-// Should support more ITs in the future.
-task examplesJavaFnApiWorkerIntegrationTest(type: Test) {
+task examplesJavaRunnerV2IntegrationTest(type: Test) {
   group = "Verification"
   dependsOn ":runners:google-cloud-dataflow-java:worker:shadowJar"
   dependsOn buildAndPushDockerContainer
@@ -487,7 +465,7 @@ task examplesJavaFnApiWorkerIntegrationTest(type: Test) {
           "--runner=TestDataflowRunner",
           "--project=${dataflowProject}",
           "--region=${dataflowRegion}",
-          "--tempRoot=${dataflowPostCommitTempRoot}"] + fnApiPipelineOptions
+          "--tempRoot=${dataflowPostCommitTempRoot}",] + runnerV2PipelineOptions
   )
 
   // The examples/java preCommit task already covers running WordCountIT/WindowedWordCountIT so
@@ -496,10 +474,7 @@ task examplesJavaFnApiWorkerIntegrationTest(type: Test) {
   exclude '**/WordCountIT.class'
   exclude '**/WindowedWordCountIT.class'
   exclude '**/TopWikipediaSessionsIT.class'
-  exclude '**/TfIdfIT.class'
   exclude '**/AutoCompleteIT.class'
-  exclude '**/TrafficMaxLaneFlowIT.class'
-  exclude '**/TrafficRoutesIT.class'
 
   maxParallelForks 4
   classpath = configurations.examplesJavaIntegrationTest
@@ -529,7 +504,7 @@ task coreSDKJavaLegacyWorkerIntegrationTest(type: Test) {
   useJUnit { }
 }
 
-task coreSDKJavaFnApiWorkerIntegrationTest(type: Test) {
+task coreSDKJavaRunnerV2IntegrationTest(type: Test) {
   group = "Verification"
   dependsOn ":runners:google-cloud-dataflow-java:worker:shadowJar"
   dependsOn buildAndPushDockerContainer
@@ -538,7 +513,7 @@ task coreSDKJavaFnApiWorkerIntegrationTest(type: Test) {
           "--runner=TestDataflowRunner",
           "--project=${dataflowProject}",
           "--region=${dataflowRegion}",
-          "--tempRoot=${dataflowPostCommitTempRoot}"] + fnApiPipelineOptions
+          "--tempRoot=${dataflowPostCommitTempRoot}"] + runnerV2PipelineOptions
   )
 
   include '**/*IT.class'
@@ -559,13 +534,13 @@ task postCommit {
   dependsOn coreSDKJavaLegacyWorkerIntegrationTest
 }
 
-task postCommitPortabilityApi {
+task postCommitRunnerV2 {
   group = "Verification"
-  description = "Various integration tests using the Dataflow FnApi runner."
+  description = "Various integration tests using the Dataflow runner v2."
   dependsOn buildAndPushDockerContainer
-  dependsOn googleCloudPlatformFnApiWorkerIntegrationTest
-  dependsOn examplesJavaFnApiWorkerIntegrationTest
-  dependsOn coreSDKJavaFnApiWorkerIntegrationTest
+  dependsOn googleCloudPlatformRunnerV2IntegrationTest
+  dependsOn examplesJavaRunnerV2IntegrationTest
+  dependsOn coreSDKJavaRunnerV2IntegrationTest
 }
 
 def gcpProject = project.findProperty('gcpProject') ?: 'apache-beam-testing'
