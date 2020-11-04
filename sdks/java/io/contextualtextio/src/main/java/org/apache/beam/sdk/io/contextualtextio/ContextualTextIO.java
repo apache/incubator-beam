@@ -22,11 +22,10 @@ import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Prec
 import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.auto.value.AutoValue;
-import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -423,11 +422,11 @@ public class ContextualTextIO {
     }
 
     /**
-     * Helper class for computing number of record in the File preceding the beginning of the Range
-     * in this file.
+     * Helper class for computing number of records in the File preceding the beginning of each read
+     * range (offset) in this file.
      */
     @VisibleForTesting
-    static class ComputeRecordsBeforeEachRange extends DoFn<Integer, KV<KV<String, Long>, Long>> {
+    static class ComputeRecordsBeforeEachRange extends DoFn<Integer, KV<String, Map<Long, Long>>> {
       private final PCollectionView<Map<String, Iterable<KV<Long, Long>>>> rangeSizes;
 
       public ComputeRecordsBeforeEachRange(
@@ -435,77 +434,78 @@ public class ContextualTextIO {
         this.rangeSizes = rangeSizes;
       }
 
-      // Add custom comparator as KV<K, V> is not comparable by default
-      private static class FileRangeComparator<K extends Comparable<K>, V extends Comparable<V>>
-          implements Comparator<KV<K, V>>, Serializable {
-        @Override
-        public int compare(KV<K, V> a, KV<K, V> b) {
-          if (a.getKey().compareTo(b.getKey()) == 0) {
-            return a.getValue().compareTo(b.getValue());
-          }
-          return a.getKey().compareTo(b.getKey());
-        }
-      }
-
       @ProcessElement
       public void processElement(ProcessContext p) {
-        // Process each file from which is a key from the side input
-
-        // Get the Map Containing the size from side-input
+        // Get the multimap side input containing the size of each read range.
         Map<String, Iterable<KV<Long, Long>>> rangeSizesMap = p.sideInput(rangeSizes);
 
+        // Process each file, retrieving each filename as key from the side input.
         for (Entry<String, Iterable<KV<Long, Long>>> entrySet : rangeSizesMap.entrySet()) {
-          // The FileRange Pair must be sorted
-          SortedMap<KV<String, Long>, Long> sorted = new TreeMap<>(new FileRangeComparator<>());
+          // The offsets in the file must be sorted.
+          SortedMap<Long, Long> sorted = new TreeMap<>();
 
           entrySet
               .getValue()
               .iterator()
-              .forEachRemaining(
-                  x -> sorted.put(KV.of(entrySet.getKey(), x.getKey()), x.getValue()));
+              .forEachRemaining(x -> sorted.put(x.getKey(), x.getValue()));
 
-          // HashMap that tracks number of records passed for each file
-          Map<String, Long> pastRecords = new HashMap<>();
-
-          // For each (File, Range) Pair, compute the number of records before it
-          for (Map.Entry<KV<String, Long>, Long> entry : sorted.entrySet()) {
-            Long numRecords = entry.getValue();
-            KV<String, Long> fileRange = entry.getKey();
-            String file = fileRange.getKey();
-            Long numRecordsBefore = 0L;
-            if (pastRecords.containsKey(file)) {
-              numRecordsBefore = pastRecords.get(file);
-            }
-            p.output(KV.of(fileRange, numRecordsBefore));
-            pastRecords.put(file, numRecordsBefore + numRecords);
+          String file = entrySet.getKey();
+          Map<Long, Long> numRecordsBeforeEachOffset = new HashMap<>();
+          Long numRecordsBefore = 0L;
+          for (Map.Entry<Long, Long> entry : sorted.entrySet()) {
+            Long offset = entry.getKey();
+            Long numRecordsInRangeStartingAtThisOffset = entry.getValue();
+            numRecordsBeforeEachOffset.put(offset, numRecordsBefore);
+            numRecordsBefore += numRecordsInRangeStartingAtThisOffset;
           }
+          p.output(KV.of(file, numRecordsBeforeEachOffset));
         }
       }
     }
 
+    /**
+     * Helper transform for computing absolute position of each record given the read range of each
+     * record and a side input describing the describing number of records that precede the
+     * beginning of each read range.
+     */
     static class AssignRecordNums extends DoFn<KV<KV<String, Long>, Row>, Row> {
-      PCollectionView<Map<KV<String, Long>, Long>> numRecordsBeforeEachRange;
+      PCollectionView<Map<String, Map<Long, Long>>> numRecordsBeforeEachRange;
 
       public AssignRecordNums(
-          PCollectionView<Map<KV<String, Long>, Long>> numRecordsBeforeEachRange) {
+          PCollectionView<Map<String, Map<Long, Long>>> numRecordsBeforeEachRange) {
         this.numRecordsBeforeEachRange = numRecordsBeforeEachRange;
       }
 
       @ProcessElement
       public void processElement(ProcessContext p) {
-        Long range = p.element().getKey().getValue();
         String file = p.element().getKey().getKey();
+        Long offset = p.element().getKey().getValue();
         Row record = p.element().getValue();
-        Long numRecordsLessThanThisRange =
-            p.sideInput(numRecordsBeforeEachRange).get(KV.of(file, range));
+
+        Map<Long, Long> numRecordsBeforeEachOffsetInFile =
+            p.sideInput(numRecordsBeforeEachRange).get(file);
+        Long numRecordsLessThanThisOffset = numRecordsBeforeEachOffsetInFile.get(offset);
+
         Row newLine =
             Row.fromRow(record)
                 .withFieldValue(
                     RecordWithMetadata.RECORD_NUM,
                     record.getInt64(RecordWithMetadata.RECORD_NUM_IN_OFFSET)
-                        + numRecordsLessThanThisRange)
+                        + numRecordsLessThanThisOffset)
                 .build();
         p.output(newLine);
+      }
+
+      private Long getNumRecordsBeforeOffset(
+          Long offset, Iterator<KV<Long, Long>> numRecordsBeforeEachOffsetInFile) {
+        while (numRecordsBeforeEachOffsetInFile.hasNext()) {
+          KV<Long, Long> entry = numRecordsBeforeEachOffsetInFile.next();
+          if (entry.getKey().equals(offset)) {
+            return entry.getValue();
+          }
+        }
+        LOG.error("Unable to compute contextual metadata. Please report a bug in ContextualTextIO");
+        return null;
       }
     }
 
@@ -689,7 +689,7 @@ public class ContextualTextIO {
        * After computing the number of lines before each range, we can find the line number in original file as numLinesBeforeOffset + lineNumInCurrentOffset
        */
 
-      PCollectionView<Map<KV<String, Long>, Long>> numRecordsBeforeEachRange =
+      PCollectionView<Map<String, Map<Long, Long>>> numRecordsBeforeEachRange =
           singletonPcoll
               .apply(
                   "ComputeNumRecordsBeforeRange",
