@@ -68,7 +68,10 @@ test {
 
 dependencies {
   antlr library.java.antlr
+  permitUnusedDeclared "org.antlr:antlr4:4.7"
   // Required to load constants from the model, e.g. max timestamp for global window
+  compile "com.github.luben:zstd-jni:1.4.5-2"
+  permitUnusedDeclared "com.github.luben:zstd-jni:1.4.5-2"
   shadow project(path: ":model:pipeline", configuration: "shadow")
   shadow project(path: ":model:job-management", configuration: "shadow")
   shadow library.java.vendored_bytebuddy_1_10_8
@@ -77,7 +80,7 @@ dependencies {
   compile library.java.antlr_runtime
   compile library.java.commons_compress
   compile library.java.commons_lang3
-  shadow library.java.jsr305
+  shadow library.java.error_prone_annotations
   shadow library.java.jackson_core
   shadow library.java.jackson_annotations
   shadow library.java.jackson_databind
@@ -85,20 +88,15 @@ dependencies {
   shadow library.java.avro
   shadow library.java.snappy_java
   shadow library.java.joda_time
-  shadow "org.tukaani:xz:1.8"
   provided library.java.junit
   provided library.java.hamcrest_core
   provided library.java.hamcrest_library
   provided 'io.airlift:aircompressor:0.16'
   provided 'com.facebook.presto.hadoop:hadoop-apache2:3.2.0-1'
-  shadowTest library.java.jackson_dataformat_yaml
   shadowTest library.java.guava_testlib
   shadowTest library.java.mockito_core
-  shadowTest library.java.hamcrest_core
-  shadowTest library.java.hamcrest_library
   shadowTest "com.esotericsoftware.kryo:kryo:2.21"
   shadowTest library.java.quickcheck_core
   shadowTest library.java.avro_tests
-  shadowTest library.java.zstd_jni
   testRuntimeOnly library.java.slf4j_jdk14
 }

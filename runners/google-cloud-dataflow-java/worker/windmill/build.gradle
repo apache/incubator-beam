@@ -36,3 +36,8 @@ configurations {
 artifacts {
     unshaded jar
 }
+
+dependencies {
+    compile "com.google.guava:guava:28.1-android"
+    permitUnusedDeclared library.java.vendored_grpc_1_26_0
+}
