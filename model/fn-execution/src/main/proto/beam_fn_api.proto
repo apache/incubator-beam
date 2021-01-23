@@ -83,8 +83,8 @@ service BeamFnControl {
 
   // Used to get the full process bundle descriptors for bundles one
   // is asked to process.
-  rpc GetProcessBundleDescriptor(GetProcessBundleDescriptorRequest) returns (
-      ProcessBundleDescriptor) {}
+  rpc GetProcessBundleDescriptor(GetProcessBundleDescriptorRequest)
+      returns (ProcessBundleDescriptor) {}
 }
 
 // Requests the ProcessBundleDescriptor with the given id.
@@ -155,8 +155,7 @@ message InstructionResponse {
 // for the lifetime of the associated control connection as long
 // as the MonitoringInfo could be reconstructed fully by overwriting its
 // payload field with the bytes specified here.
-message HarnessMonitoringInfosRequest {
-}
+message HarnessMonitoringInfosRequest {}
 
 message HarnessMonitoringInfosResponse {
   // An identifier to MonitoringInfo.payload mapping containing
@@ -214,7 +213,8 @@ message ProcessBundleDescriptor {
       state_api_service_descriptor = 7;
 
   // A descriptor describing the end point to use for Data API for user timers.
-  // Required if the ProcessBundleDescriptor contains any transforms that have user timers.
+  // Required if the ProcessBundleDescriptor contains any transforms that have
+  // user timers.
   org.apache.beam.model.pipeline.v1.ApiServiceDescriptor
       timer_api_service_descriptor = 8;
 }
@@ -271,7 +271,6 @@ message ProcessBundleRequest {
   // A cache token which can be used by an SDK to check for the validity
   // of cached elements which have a cache token associated.
   message CacheToken {
-
     // A flag to indicate a cache token is valid for all user state.
     message UserState {}
 
@@ -307,7 +306,8 @@ message ProcessBundleResponse {
 
   // DEPRECATED (Required) The list of metrics or other MonitoredState
   // collected while processing this bundle.
-  repeated org.apache.beam.model.pipeline.v1.MonitoringInfo monitoring_infos = 3;
+  repeated org.apache.beam.model.pipeline.v1.MonitoringInfo monitoring_infos =
+      3;
 
   // (Optional) Specifies that the runner must callback to this worker
   // once the output of the bundle is committed. The Runner must send a
@@ -358,7 +358,8 @@ message MonitoringInfosMetadataRequest {
 message ProcessBundleProgressResponse {
   // DEPRECATED (Required) The list of metrics or other MonitoredState
   // collected while processing this bundle.
-  repeated org.apache.beam.model.pipeline.v1.MonitoringInfo monitoring_infos = 3;
+  repeated org.apache.beam.model.pipeline.v1.MonitoringInfo monitoring_infos =
+      3;
 
   // An identifier to MonitoringInfo.payload mapping.
   //
@@ -390,7 +391,8 @@ message ProcessBundleProgressResponse {
 // payload field with the bytes specified here.
 message MonitoringInfosMetadataResponse {
   // A mapping from an identifier to the full metrics information.
-  map<string, org.apache.beam.model.pipeline.v1.MonitoringInfo> monitoring_info = 1;
+  map<string, org.apache.beam.model.pipeline.v1.MonitoringInfo>
+      monitoring_info = 1;
 }
 
 // Represents a request to the SDK to split a currently active bundle.
@@ -475,7 +477,6 @@ message ProcessBundleSplitResponse {
   repeated ChannelSplit channel_splits = 3;
 }
 
-
 message FinalizeBundleRequest {
   // (Required) A reference to a completed process bundle request with the given
   // instruction id.
@@ -545,7 +546,6 @@ message Elements {
     // for the given instruction and transform, ending the stream.
     bool is_last = 5;
   }
-
 
   // (Optional) A list containing parts of logical byte streams.
   repeated Data data = 1;
@@ -688,7 +688,8 @@ message StateKey {
     bytes key = 4;
   }
 
-  // Represents a request for the keys associated with a specified window in a PCollection. See
+  // Represents a request for the keys associated with a specified window in a
+  // PCollection. See
   // https://s.apache.org/beam-fn-state-api-and-bundle-processing for further
   // details.
   //
@@ -896,13 +897,13 @@ message StopWorkerResponse {
 
 service BeamFnExternalWorkerPool {
   // Start the SDK worker with the given ID.
-  rpc StartWorker (StartWorkerRequest) returns (StartWorkerResponse) {}
+  rpc StartWorker(StartWorkerRequest) returns (StartWorkerResponse) {}
   // Stop the SDK worker.
-  rpc StopWorker (StopWorkerRequest) returns (StopWorkerResponse) {}
+  rpc StopWorker(StopWorkerRequest) returns (StopWorkerResponse) {}
 }
 
-// Request from runner to SDK Harness asking for its status. For more details see
-// https://s.apache.org/beam-fn-api-harness-status
+// Request from runner to SDK Harness asking for its status. For more details
+// see https://s.apache.org/beam-fn-api-harness-status
 message WorkerStatusRequest {
   // (Required) Unique ID identifying this request.
   string id = 1;
@@ -913,19 +914,21 @@ message WorkerStatusResponse {
   // (Required) Unique ID from the original request.
   string id = 1;
 
-  // (Optional) Error message if exception encountered generating the status response.
+  // (Optional) Error message if exception encountered generating the status
+  // response.
   string error = 2;
 
-  // (Optional) Status debugging info reported by SDK harness worker. Content and
-  // format is not strongly enforced but should be print-friendly and
-  // appropriate as an HTTP response body for end user. For details of the preferred
-  // info to include in the message see
+  // (Optional) Status debugging info reported by SDK harness worker. Content
+  // and format is not strongly enforced but should be print-friendly and
+  // appropriate as an HTTP response body for end user. For details of the
+  // preferred info to include in the message see
   // https://s.apache.org/beam-fn-api-harness-status
   string status_info = 3;
 }
 
-// API for SDKs to report debug-related statuses to runner during pipeline execution.
+// API for SDKs to report debug-related statuses to runner during pipeline
+// execution.
 service BeamFnWorkerStatus {
-  rpc WorkerStatus (stream WorkerStatusResponse)
-    returns (stream WorkerStatusRequest) {}
+  rpc WorkerStatus(stream WorkerStatusResponse)
+      returns (stream WorkerStatusRequest) {}
 }

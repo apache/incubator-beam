@@ -36,7 +36,8 @@ import "google/protobuf/timestamp.proto";
 // By default, all data in a PCollection is assigned to the single global
 // window. See BeamConstants for the time span this window encompasses.
 //
-// See https://beam.apache.org/documentation/programming-guide/#single-global-window
+// See
+// https://beam.apache.org/documentation/programming-guide/#single-global-window
 // for additional details.
 message GlobalWindowsPayload {
   enum Enum {
@@ -48,12 +49,11 @@ message GlobalWindowsPayload {
 // A fixed time window represents a consistent duration size, non overlapping
 // time interval in the data stream.
 //
-// See https://beam.apache.org/documentation/programming-guide/#fixed-time-windows
+// See
+// https://beam.apache.org/documentation/programming-guide/#fixed-time-windows
 // for additional details.
 message FixedWindowsPayload {
-  enum Enum {
-    PROPERTIES = 0 [(beam_urn) = "beam:window_fn:fixed_windows:v1"];
-  }
+  enum Enum { PROPERTIES = 0 [(beam_urn) = "beam:window_fn:fixed_windows:v1"]; }
 
   // (Required) Represents the size of the window.
   google.protobuf.Duration size = 1;
@@ -75,7 +75,8 @@ message FixedWindowsPayload {
 // average of the past 60 seconds’ worth of data, updated every 30 seconds, in
 // our example.
 //
-// See https://beam.apache.org/documentation/programming-guide/#sliding-time-windows
+// See
+// https://beam.apache.org/documentation/programming-guide/#sliding-time-windows
 // for additional details.
 message SlidingWindowsPayload {
   enum Enum {

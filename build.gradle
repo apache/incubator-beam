@@ -307,6 +307,14 @@ task typescriptPreCommit() {
   dependsOn ":sdks:python:test-suites:tox:py38:jest"
 }
 
+task protoPreCommit() {
+  dependsOn ":model:fn-execution:protoFormatCheck"
+  dependsOn ":model:interactive:protoFormatCheck"
+  dependsOn ":model:job-management:protoFormatCheck"
+  dependsOn ":model:pipeline:protoFormatCheck"
+  dependsOn ":runners:google-cloud-dataflow-java:worker:windmill:protoFormatCheck"
+}
+
 // Configure the release plugin to do only local work; the release manager determines what, if
 // anything, to push. On failure, the release manager can reset the branch without pushing.
 release {

@@ -27,14 +27,14 @@ package google.dataflow.windmillservice.v1alpha1;
 // Dataflow work.
 service CloudWindmillServiceV1Alpha1 {
   // Gets streaming Dataflow work.
-  rpc GetWork(.windmill.GetWorkRequest) returns(.windmill.GetWorkResponse);
+  rpc GetWork(.windmill.GetWorkRequest) returns (.windmill.GetWorkResponse);
 
   // Gets streaming dataflow work. Response is a stream.
-  rpc GetWorkStream(stream .windmill.StreamingGetWorkRequest)
-    returns (stream .windmill.StreamingGetWorkResponseChunk);
+  rpc GetWorkStream(stream.windmill.StreamingGetWorkRequest)
+      returns (stream.windmill.StreamingGetWorkResponseChunk);
 
   // Gets data from Windmill.
-  rpc GetData(.windmill.GetDataRequest) returns(.windmill.GetDataResponse);
+  rpc GetData(.windmill.GetDataRequest) returns (.windmill.GetDataResponse);
 
   // Gets data from windmill. Response is a stream.
   rpc GetDataStream(stream.windmill.StreamingGetDataRequest)
@@ -42,9 +42,9 @@ service CloudWindmillServiceV1Alpha1 {
 
   // Commits previously acquired work.
   rpc CommitWork(.windmill.CommitWorkRequest)
-      returns(.windmill.CommitWorkResponse);
+      returns (.windmill.CommitWorkResponse);
 
   // Streams commit of previously acquired work.
-  rpc CommitWorkStream(stream .windmill.StreamingCommitWorkRequest)
-    returns (stream .windmill.StreamingCommitResponse);
+  rpc CommitWorkStream(stream.windmill.StreamingCommitWorkRequest)
+      returns (stream.windmill.StreamingCommitResponse);
 }

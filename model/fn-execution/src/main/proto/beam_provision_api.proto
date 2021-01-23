@@ -17,8 +17,8 @@
  */
 
 /*
- * Protocol Buffers describing the Provision API, for communicating with a runner
- * for job and environment provisioning information over GRPC.
+ * Protocol Buffers describing the Provision API, for communicating with a
+ * runner for job and environment provisioning information over GRPC.
  */
 
 syntax = "proto3";
@@ -37,44 +37,46 @@ import "google/protobuf/struct.proto";
 // worker instances -- such as pipeline options, resource constraints and
 // other job metadata -- needed by an SDK harness instance to initialize.
 service ProvisionService {
-    // Get provision information for the SDK harness worker instance.
-    rpc GetProvisionInfo(GetProvisionInfoRequest) returns (GetProvisionInfoResponse);
+  // Get provision information for the SDK harness worker instance.
+  rpc GetProvisionInfo(GetProvisionInfoRequest)
+      returns (GetProvisionInfoResponse);
 }
 
 // A request to get the provision info of a SDK harness worker instance.
-message GetProvisionInfoRequest { }
+message GetProvisionInfoRequest {}
 
 // A response containing the provision info of a SDK harness worker instance.
 message GetProvisionInfoResponse {
-    ProvisionInfo info = 1;
+  ProvisionInfo info = 1;
 }
 
 // Runtime provisioning information for a SDK harness worker instance,
 // such as pipeline options, resource constraints and other job metadata
 message ProvisionInfo {
-    // (required) Pipeline options. For non-template jobs, the options are
-    // identical to what is passed to job submission.
-    google.protobuf.Struct pipeline_options = 3;
+  // (required) Pipeline options. For non-template jobs, the options are
+  // identical to what is passed to job submission.
+  google.protobuf.Struct pipeline_options = 3;
 
-    // (required) The artifact retrieval token produced by
-    // LegacyArtifactStagingService.CommitManifestResponse.
-    string retrieval_token = 6;
+  // (required) The artifact retrieval token produced by
+  // LegacyArtifactStagingService.CommitManifestResponse.
+  string retrieval_token = 6;
 
-    // (optional) The endpoint that the runner is hosting for the SDK to submit
-    // status reports to during pipeline execution. This field will only be
-    // populated if the runner supports SDK status reports. For more details see
-    // https://s.apache.org/beam-fn-api-harness-status
-    org.apache.beam.model.pipeline.v1.ApiServiceDescriptor status_endpoint = 7;
+  // (optional) The endpoint that the runner is hosting for the SDK to submit
+  // status reports to during pipeline execution. This field will only be
+  // populated if the runner supports SDK status reports. For more details see
+  // https://s.apache.org/beam-fn-api-harness-status
+  org.apache.beam.model.pipeline.v1.ApiServiceDescriptor status_endpoint = 7;
 
-    // (optional) The logging endpoint this SDK should use.
-    org.apache.beam.model.pipeline.v1.ApiServiceDescriptor logging_endpoint = 8;
+  // (optional) The logging endpoint this SDK should use.
+  org.apache.beam.model.pipeline.v1.ApiServiceDescriptor logging_endpoint = 8;
 
-    // (optional) The artifact retrieval endpoint this SDK should use.
-    org.apache.beam.model.pipeline.v1.ApiServiceDescriptor artifact_endpoint = 9;
+  // (optional) The artifact retrieval endpoint this SDK should use.
+  org.apache.beam.model.pipeline.v1.ApiServiceDescriptor artifact_endpoint = 9;
 
-    // (optional) The control endpoint this SDK should use.
-    org.apache.beam.model.pipeline.v1.ApiServiceDescriptor control_endpoint = 10;
+  // (optional) The control endpoint this SDK should use.
+  org.apache.beam.model.pipeline.v1.ApiServiceDescriptor control_endpoint = 10;
 
-    // The set of dependencies that should be staged into this environment.
-    repeated org.apache.beam.model.pipeline.v1.ArtifactInformation dependencies = 11;
+  // The set of dependencies that should be staged into this environment.
+  repeated org.apache.beam.model.pipeline.v1.ArtifactInformation dependencies =
+      11;
 }

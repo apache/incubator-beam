@@ -52,14 +52,17 @@ message AuthenticationSpec {
 }
 
 // TODO: Add authentication specifications as needed.
-//message StandardAuthenticationSpecs {
+// message StandardAuthenticationSpecs {
 //  enum Enum {
-//    OAUTH2_CLIENT_CREDENTIALS_GRANT = 0 [(org.apache.beam.model.pipeline.v1.beam_urn) = "beam:authentication:oauth2_client_credentials_grant:v1"];
+//    OAUTH2_CLIENT_CREDENTIALS_GRANT = 0
+//    [(org.apache.beam.model.pipeline.v1.beam_urn) =
+//    "beam:authentication:oauth2_client_credentials_grant:v1"];
 //  }
 //}
 //
-//message OAuth2ClientCredentialsGrantPayload {
-//  // (Required) The URL to submit a "client_credentials" grant type request for
+// message OAuth2ClientCredentialsGrantPayload {
+//  // (Required) The URL to submit a "client_credentials" grant type request
+//  for
 //  // an OAuth access token which will be used as a bearer token for requests.
 //  string url = 1;
 //}

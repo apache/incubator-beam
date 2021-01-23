@@ -41,16 +41,17 @@ message BeamConstants {
     // The smallest representable timestamp of an element or a window boundary.
     MIN_TIMESTAMP_MILLIS = 0 [(beam_constant) = "-9223372036854775"];
     // The largest representable timestamp of an element or a window boundary.
-    MAX_TIMESTAMP_MILLIS = 1 [(beam_constant) =  "9223372036854775"];
+    MAX_TIMESTAMP_MILLIS = 1 [(beam_constant) = "9223372036854775"];
 
     // The maximum timestamp for the global window.
     // Triggers use max timestamp to set timers' timestamp. Timers fire when
     // the watermark passes their timestamps. So, the timestamp needs to be
     // smaller than the MAX_TIMESTAMP_MILLIS.
     // One standard day is subtracted from MAX_TIMESTAMP_MILLIS to make sure
-    // the max timestamp is smaller than MAX_TIMESTAMP_MILLIS even after rounding up
-    // to seconds or minutes.
-    GLOBAL_WINDOW_MAX_TIMESTAMP_MILLIS = 2 [(beam_constant) = "9223371950454775"];
+    // the max timestamp is smaller than MAX_TIMESTAMP_MILLIS even after
+    // rounding up to seconds or minutes.
+    GLOBAL_WINDOW_MAX_TIMESTAMP_MILLIS = 2
+        [(beam_constant) = "9223371950454775"];
   }
 }
 
@@ -85,7 +86,6 @@ message Components {
 // PCollections, SDK environments, coders, etc., for
 // supporting compact reuse and arbitrary graph structure.
 message Pipeline {
-
   // (Required) The coders, UDFs, graph nodes, etc, that make up
   // this pipeline.
   Components components = 1;
@@ -125,7 +125,6 @@ message Pipeline {
 // collection. You can also define your own more complex composite transforms to
 // fit your pipeline’s exact use case.
 message PTransform {
-
   // (Required) A unique name for the application node.
   //
   // Ideally, this should be stable over multiple evolutions of a pipeline
@@ -295,7 +294,8 @@ message StandardPTransforms {
     //
     // Window merging function:
     // Input: KV<nonce, iterable<OriginalWindow>>
-    // Output: KV<nonce, KV<iterable<UnmergedOriginalWindow>, iterable<KV<MergedWindow, iterable<ConsumedOriginalWindow>>>>
+    // Output: KV<nonce, KV<iterable<UnmergedOriginalWindow>,
+    // iterable<KV<MergedWindow, iterable<ConsumedOriginalWindow>>>>
     //
     // For each set of original windows, a list of all unmerged windows is
     // output alongside a map of merged window to set of consumed windows.
@@ -310,10 +310,10 @@ message StandardPTransforms {
 
     // A transform that translates a given element to its human-readable
     // representation.
-    // 
+    //
     // Input: KV<nonce, element>
     // Output: KV<nonce, string>
-    // 
+    //
     // For each given element, the implementation returns the best-effort
     // human-readable representation. When possible, the implementation could
     // call a user-overridable method on the type. For example, Java could
@@ -329,8 +329,8 @@ message StandardPTransforms {
     // Payload: ReadPayload.
     READ = 0 [(beam_urn) = "beam:transform:read:v1"];
 
-    // Runners should move away from translating `CreatePCollectionView` and treat this as
-    // part of the translation for a `ParDo` side input.
+    // Runners should move away from translating `CreatePCollectionView` and
+    // treat this as part of the translation for a `ParDo` side input.
     CREATE_VIEW = 1 [(beam_urn) = "beam:transform:create_view:v1"];
   }
   enum Composites {
@@ -360,7 +360,8 @@ message StandardPTransforms {
 
     // Represents the GroupIntoBatches.WithShardedKey operation.
     // Payload: GroupIntoBatchesPayload
-    GROUP_INTO_BATCHES_WITH_SHARDED_KEY = 6 [(beam_urn) = "beam:transform:group_into_batches_with_sharded_key:v1"];
+    GROUP_INTO_BATCHES_WITH_SHARDED_KEY = 6
+        [(beam_urn) = "beam:transform:group_into_batches_with_sharded_key:v1"];
   }
   // Payload for all of these: CombinePayload
   enum CombineComponents {
@@ -368,25 +369,29 @@ message StandardPTransforms {
     // in the following document:
     // https://s.apache.org/beam-runner-api-combine-model#heading=h.ta0g6ase8z07
     // Payload: CombinePayload
-    COMBINE_PER_KEY_PRECOMBINE = 0 [(beam_urn) = "beam:transform:combine_per_key_precombine:v1"];
+    COMBINE_PER_KEY_PRECOMBINE = 0
+        [(beam_urn) = "beam:transform:combine_per_key_precombine:v1"];
 
     // Represents the Merge Accumulators part of a lifted Combine Per Key, as
     // described in the following document:
     // https://s.apache.org/beam-runner-api-combine-model#heading=h.jco9rvatld5m
     // Payload: CombinePayload
-    COMBINE_PER_KEY_MERGE_ACCUMULATORS = 1 [(beam_urn) = "beam:transform:combine_per_key_merge_accumulators:v1"];
+    COMBINE_PER_KEY_MERGE_ACCUMULATORS = 1
+        [(beam_urn) = "beam:transform:combine_per_key_merge_accumulators:v1"];
 
     // Represents the Extract Outputs part of a lifted Combine Per Key, as
     // described in the following document:
     // https://s.apache.org/beam-runner-api-combine-model#heading=h.i9i6p8gtl6ku
     // Payload: CombinePayload
-    COMBINE_PER_KEY_EXTRACT_OUTPUTS = 2 [(beam_urn) = "beam:transform:combine_per_key_extract_outputs:v1"];
+    COMBINE_PER_KEY_EXTRACT_OUTPUTS = 2
+        [(beam_urn) = "beam:transform:combine_per_key_extract_outputs:v1"];
 
     // Represents the Combine Grouped Values transform, as described in the
     // following document:
     // https://s.apache.org/beam-runner-api-combine-model#heading=h.aj86ew4v1wk
     // Payload: CombinePayload
-    COMBINE_GROUPED_VALUES = 3 [(beam_urn) = "beam:transform:combine_grouped_values:v1"];
+    COMBINE_GROUPED_VALUES = 3
+        [(beam_urn) = "beam:transform:combine_grouped_values:v1"];
 
     // Represents the Convert To Accumulators transform, as described in the
     // following document:
@@ -400,7 +405,8 @@ message StandardPTransforms {
   enum SplittableParDoComponents {
     // Pairs the input element with its initial restriction.
     // Input: element; output: KV(element, restriction).
-    PAIR_WITH_RESTRICTION = 0 [(beam_urn) = "beam:transform:sdf_pair_with_restriction:v1"];
+    PAIR_WITH_RESTRICTION = 0
+        [(beam_urn) = "beam:transform:sdf_pair_with_restriction:v1"];
 
     // Splits the restriction of each element/restriction pair and returns the
     // resulting splits, with a corresponding floating point size estimation
@@ -411,7 +417,8 @@ message StandardPTransforms {
     //
     // Input: KV(element, restriction)
     // Output: KV(KV(element, restriction), size))
-    SPLIT_AND_SIZE_RESTRICTIONS = 1 [(beam_urn) = "beam:transform:sdf_split_and_size_restrictions:v1"];
+    SPLIT_AND_SIZE_RESTRICTIONS = 1
+        [(beam_urn) = "beam:transform:sdf_split_and_size_restrictions:v1"];
 
     // Applies the DoFn to every element and restriction.
     //
@@ -419,7 +426,9 @@ message StandardPTransforms {
     // have the same type as the input to this transform.
     //
     // Input: KV(KV(element, restriction), size); output: DoFn's output.
-    PROCESS_SIZED_ELEMENTS_AND_RESTRICTIONS = 2 [(beam_urn) = "beam:transform:sdf_process_sized_element_and_restrictions:v1"];
+    PROCESS_SIZED_ELEMENTS_AND_RESTRICTIONS = 2
+        [(beam_urn) =
+             "beam:transform:sdf_process_sized_element_and_restrictions:v1"];
 
     // Truncates the restriction of each element/restriction pair and returns
     // the finite restriction which will be processed when a pipeline is
@@ -429,11 +438,13 @@ message StandardPTransforms {
     //
     // Input: KV(KV(element, restriction), size);
     // Output: KV(KV(element, restriction), size).
-    TRUNCATE_SIZED_RESTRICTION = 3 [(beam_urn) = "beam:transform:sdf_truncate_sized_restrictions:v1"];
+    TRUNCATE_SIZED_RESTRICTION = 3
+        [(beam_urn) = "beam:transform:sdf_truncate_sized_restrictions:v1"];
   }
   // Payload for all of these: GroupIntoBatchesPayload
   enum GroupIntoBatchesComponents {
-    GROUP_INTO_BATCHES = 0 [(beam_urn) = "beam:transform:group_into_batches:v1"];
+    GROUP_INTO_BATCHES = 0
+        [(beam_urn) = "beam:transform:group_into_batches:v1"];
   }
 }
 
@@ -455,7 +466,6 @@ message StandardSideInputTypes {
 
 // A PCollection!
 message PCollection {
-
   // (Required) A unique name for the PCollection.
   //
   // Ideally, this should be stable over multiple evolutions of a pipeline
@@ -482,7 +492,6 @@ message PCollection {
 
 // The payload for the primitive ParDo transform.
 message ParDoPayload {
-
   // (Required) The FunctionSpec of the DoFn.
   FunctionSpec do_fn = 1;
 
@@ -575,7 +584,6 @@ message IsBounded {
 
 // The payload for the primitive Read transform.
 message ReadPayload {
-
   // (Required) The FunctionSpec of the source for this Read.
   FunctionSpec source = 1;
 
@@ -587,24 +595,22 @@ message ReadPayload {
 
 // The payload for the WindowInto transform.
 message WindowIntoPayload {
-
   // (Required) The FunctionSpec of the WindowFn.
   FunctionSpec window_fn = 1;
 }
 
 // The payload for the special-but-not-primitive Combine transform.
 message CombinePayload {
-
   // (Required) The FunctionSpec of the CombineFn.
   FunctionSpec combine_fn = 1;
 
-  // (Required) A reference to the Coder to use for accumulators of the CombineFn
+  // (Required) A reference to the Coder to use for accumulators of the
+  // CombineFn
   string accumulator_coder_id = 2;
 }
 
 // The payload for the test-only primitive TestStream
 message TestStreamPayload {
-
   // (Required) the coder for elements in the TestStream events
   string coder_id = 1;
 
@@ -677,7 +683,6 @@ message EventsRequest {
 
 // The payload for the special-but-not-primitive WriteFiles transform.
 message WriteFilesPayload {
-
   // (Required) The FunctionSpec of the FileBasedSink.
   FunctionSpec sink = 1;
 
@@ -695,11 +700,11 @@ message WriteFilesPayload {
 // This can be used by runners that wish to override Beam Pub/Sub read transform
 // with a native implementation.
 message PubSubReadPayload {
-
   // Topic to read from. Exactly one of topic or subscription should be set.
   string topic = 1;
 
-  // Subscription to read from. Exactly one of topic or subscription should be set.
+  // Subscription to read from. Exactly one of topic or subscription should be
+  // set.
   string subscription = 2;
 
   // Attribute that provides element timestamps.
@@ -708,15 +713,15 @@ message PubSubReadPayload {
   // Attribute to be used for uniquely identifying messages.
   string id_attribute = 4;
 
-  // If true, reads Pub/Sub payload as well as attributes. If false, reads only the payload.
+  // If true, reads Pub/Sub payload as well as attributes. If false, reads only
+  // the payload.
   bool with_attributes = 5;
 }
 
 // Payload used by Google Cloud Pub/Sub write transform.
-// This can be used by runners that wish to override Beam Pub/Sub write transform
-// with a native implementation.
+// This can be used by runners that wish to override Beam Pub/Sub write
+// transform with a native implementation.
 message PubSubWritePayload {
-
   // Topic to write to.
   string topic = 1;
 
@@ -729,7 +734,6 @@ message PubSubWritePayload {
 
 // Payload for GroupIntoBatches composite transform.
 message GroupIntoBatchesPayload {
-
   // (Required) Max size of a batch.
   int64 batch_size = 1;
 
@@ -740,7 +744,6 @@ message GroupIntoBatchesPayload {
 // A coder, the binary format for serialization and deserialization of data in
 // a pipeline.
 message Coder {
-
   // (Required) A specification for the coder, as a URN plus parameters. This
   // may be a cross-language agreed-upon format, or it may be a "custom coder"
   // that can only be used by a particular SDK. It does not include component
@@ -804,11 +807,13 @@ message StandardCoders {
     //   dynamic timer tag - a string which identifies a timer.
     //   windows - uses component coders.
     //   clear bit - a boolean set for clearing the timer.
-    //   fire timestamp - a big endian 8 byte integer representing millis-since-epoch.
-    //     The encoded representation is shifted so that the byte representation of
-    //     negative values are lexicographically ordered before the byte representation
-    //     of positive values. This is typically done by subtracting -9223372036854775808
-    //     from the value and encoding it as a signed big endian integer. Example values:
+    //   fire timestamp - a big endian 8 byte integer representing
+    //   millis-since-epoch.
+    //     The encoded representation is shifted so that the byte representation
+    //     of negative values are lexicographically ordered before the byte
+    //     representation of positive values. This is typically done by
+    //     subtracting -9223372036854775808 from the value and encoding it as a
+    //     signed big endian integer. Example values:
     //
     //     -9223372036854775808: 00 00 00 00 00 00 00 00
     //                     -255: 7F FF FF FF FF FF FF 01
@@ -838,7 +843,8 @@ message StandardCoders {
     // Encodes an element, the windows it is in, the timestamp of the element,
     // and the pane of the element. The encoding is represented as:
     // timestamp windows pane element
-    //   timestamp - A big endian 8 byte integer representing millis-since-epoch.
+    //   timestamp - A big endian 8 byte integer representing
+    //   millis-since-epoch.
     //     The encoded representation is shifted so that the byte representation
     //     of negative values are lexicographically ordered before the byte
     //     representation of positive values. This is typically done by
@@ -885,15 +891,16 @@ message StandardCoders {
     // Components: The element coder and the window coder, in that order.
     WINDOWED_VALUE = 8 [(beam_urn) = "beam:coder:windowed_value:v1"];
 
-    // A windowed value coder with parameterized timestamp, windows and pane info.
-    // Encodes an element with only the value of the windowed value.
-    // Decodes the value and assigns the parameterized timestamp, windows and pane info to the
-    // windowed value.
-    // Components: The element coder and the window coder, in that order
-    // The payload of this coder is an encoded windowed value using the
-    // beam:coder:windowed_value:v1 coder parameterized by a beam:coder:bytes:v1
-    // element coder and the window coder that this param_windowed_value coder uses.
-    PARAM_WINDOWED_VALUE = 14 [(beam_urn) = "beam:coder:param_windowed_value:v1"];
+    // A windowed value coder with parameterized timestamp, windows and pane
+    // info. Encodes an element with only the value of the windowed value.
+    // Decodes the value and assigns the parameterized timestamp, windows and
+    // pane info to the windowed value. Components: The element coder and the
+    // window coder, in that order The payload of this coder is an encoded
+    // windowed value using the beam:coder:windowed_value:v1 coder parameterized
+    // by a beam:coder:bytes:v1 element coder and the window coder that this
+    // param_windowed_value coder uses.
+    PARAM_WINDOWED_VALUE = 14
+        [(beam_urn) = "beam:coder:param_windowed_value:v1"];
 
     // Encodes an iterable of elements, some of which may be stored elsewhere.
     //
@@ -910,7 +917,8 @@ message StandardCoders {
     //
     // Components: Coder for a single element.
     // Experimental.
-    STATE_BACKED_ITERABLE = 9 [(beam_urn) = "beam:coder:state_backed_iterable:v1"];
+    STATE_BACKED_ITERABLE = 9
+        [(beam_urn) = "beam:coder:state_backed_iterable:v1"];
 
     // Additional Standard Coders
     // --------------------------
@@ -961,13 +969,13 @@ message StandardCoders {
     //     values.
     //   - For present values the null indicator is followed by the value
     //     encoded with it's corresponding coder.
-    // 
+    //
     // Well known logical types:
     //   beam:logical_type:micros_instant:v1
     //   - Representation type: ROW<seconds: INT64, micros: INT64>
     //   - A timestamp without a timezone where seconds + micros represents the
     //     amount of time since the epoch.
-    // 
+    //
     // The payload for RowCoder is an instance of Schema.
     // Components: None
     // Experimental.
@@ -1002,7 +1010,6 @@ message StandardCoders {
 //
 // TODO: consider inlining field on PCollection
 message WindowingStrategy {
-
   // (Required) The FunctionSpec of the UDF that assigns windows,
   // merges windows, and shifts timestamps before they are
   // combined according to the OutputTime.
@@ -1045,7 +1052,8 @@ message WindowingStrategy {
   // (Required) Indicate whether empty on-time panes should be omitted.
   OnTimeBehavior.Enum OnTimeBehavior = 9;
 
-  // (Required) Whether or not the window fn assigns inputs to exactly one window
+  // (Required) Whether or not the window fn assigns inputs to exactly one
+  // window
   //
   // This knowledge is required for some optimizations
   bool assigns_to_one_window = 10;
@@ -1122,7 +1130,8 @@ message OnTimeBehavior {
     // the previous firing, an element will be produced.
     FIRE_ALWAYS = 1;
 
-    // Only fire the on-time pane if there is new data since the previous firing.
+    // Only fire the on-time pane if there is new data since the previous
+    // firing.
     FIRE_IF_NONEMPTY = 2;
   }
 }
@@ -1172,7 +1181,6 @@ message TimeDomain {
 //
 // A trigger is described in terms of when it is _ready_ to permit output.
 message Trigger {
-
   // Ready when all subtriggers are ready.
   message AfterAll {
     repeated Trigger subtriggers = 1;
@@ -1195,7 +1203,6 @@ message Trigger {
   // When the end of the window is reached, the trigger transitions between
   // the subtriggers.
   message AfterEndOfWindow {
-
     // (Optional) A trigger governing output prior to the end of the window.
     Trigger early_firings = 1;
 
@@ -1205,7 +1212,6 @@ message Trigger {
 
   // After input arrives, ready when the specified delay has passed.
   message AfterProcessingTime {
-
     // (Required) The transforms to apply to an arriving element's timestamp,
     // in order
     repeated TimestampTransform timestamp_transforms = 1;
@@ -1213,13 +1219,11 @@ message Trigger {
 
   // Ready whenever upstream processing time has all caught up with
   // the arrival time of an input element
-  message AfterSynchronizedProcessingTime {
-  }
+  message AfterSynchronizedProcessingTime {}
 
   // The default trigger. Equivalent to Repeat { AfterEndOfWindow } but
   // specially denoted to indicate the user did not alter the triggering.
-  message Default {
-  }
+  message Default {}
 
   // Ready whenever the requisite number of input elements have arrived
   message ElementCount {
@@ -1228,18 +1232,15 @@ message Trigger {
 
   // Never ready. There will only be an ON_TIME output and a final
   // output at window expiration.
-  message Never {
-  }
+  message Never {}
 
   // Always ready. This can also be expressed as ElementCount(1) but
   // is more explicit.
-  message Always {
-  }
+  message Always {}
 
   // Ready whenever either of its subtriggers are ready, but finishes output
   // when the finally subtrigger fires.
   message OrFinally {
-
     // (Required) Trigger governing main output; may fire repeatedly.
     Trigger main = 1;
 
@@ -1330,23 +1331,23 @@ message StandardArtifacts {
   enum Types {
     // A URN for locally-accessible artifact files.
     // payload: ArtifactFilePayload
-    FILE      = 0 [(beam_urn) = "beam:artifact:type:file:v1"];
+    FILE = 0 [(beam_urn) = "beam:artifact:type:file:v1"];
 
     // A URN for artifacts described by URLs.
     // payload: ArtifactUrlPayload
-    URL       = 1 [(beam_urn) = "beam:artifact:type:url:v1"];
+    URL = 1 [(beam_urn) = "beam:artifact:type:url:v1"];
 
     // A URN for artifacts embedded in ArtifactInformation proto.
     // payload: EmbeddedFilePayload.
-    EMBEDDED  = 2 [(beam_urn) = "beam:artifact:type:embedded:v1"];
+    EMBEDDED = 2 [(beam_urn) = "beam:artifact:type:embedded:v1"];
 
     // A URN for Python artifacts hosted on PYPI.
     // payload: PypiPayload
-    PYPI      = 3 [(beam_urn) = "beam:artifact:type:pypi:v1"];
+    PYPI = 3 [(beam_urn) = "beam:artifact:type:pypi:v1"];
 
     // A URN for Java artifacts hosted on a Maven repository.
     // payload: MavenPayload
-    MAVEN     = 4 [(beam_urn) = "beam:artifact:type:maven:v1"];
+    MAVEN = 4 [(beam_urn) = "beam:artifact:type:maven:v1"];
 
     // A URN for deferred artifacts.
     // payload: DeferredArtifactPayload
@@ -1355,7 +1356,7 @@ message StandardArtifacts {
   enum Roles {
     // A URN for staging-to role.
     // payload: ArtifactStagingToRolePayload
-    STAGING_TO  = 0 [(beam_urn) = "beam:artifact:role:staging_to:v1"];
+    STAGING_TO = 0 [(beam_urn) = "beam:artifact:role:staging_to:v1"];
   }
 }
 
@@ -1368,7 +1369,8 @@ message ArtifactFilePayload {
 }
 
 message ArtifactUrlPayload {
-  // a string for an artifact URL e.g. "https://.../foo.jar" or "gs://tmp/foo.jar"
+  // a string for an artifact URL e.g. "https://.../foo.jar" or
+  // "gs://tmp/foo.jar"
   string url = 1;
 }
 
@@ -1387,19 +1389,22 @@ message PyPIPayload {
 
 message MavenPayload {
   // A string specifying Maven artifact.
-  // The standard format is "groupId:artifactId:version[:packaging[:classifier]]"
+  // The standard format is
+  // "groupId:artifactId:version[:packaging[:classifier]]"
   string artifact = 1;
 
-  // (Optional) Repository URL. If not specified, Maven central is used by default.
+  // (Optional) Repository URL. If not specified, Maven central is used by
+  // default.
   string repository_url = 2;
 }
 
 message DeferredArtifactPayload {
-  // A unique string identifier assigned by the creator of this payload. The creator may use this key to confirm
-  // whether they can parse the data.
+  // A unique string identifier assigned by the creator of this payload. The
+  // creator may use this key to confirm whether they can parse the data.
   string key = 1;
 
-  // Data for deferred artifacts. Interpretation of bytes is delegated to the creator of this payload.
+  // Data for deferred artifacts. Interpretation of bytes is delegated to the
+  // creator of this payload.
   bytes data = 2;
 }
 
@@ -1441,7 +1446,8 @@ message Environment {
   // support of optional protocols not tied to a concrete component.
   repeated string capabilities = 5;
 
-  // (Optional) artifact dependency information used for executing UDFs in this environment.
+  // (Optional) artifact dependency information used for executing UDFs in this
+  // environment.
   repeated ArtifactInformation dependencies = 6;
 
   reserved 1;
@@ -1449,11 +1455,17 @@ message Environment {
 
 message StandardEnvironments {
   enum Environments {
-    DOCKER = 0 [(beam_urn) = "beam:env:docker:v1"]; // A managed docker container to run user code.
+    DOCKER = 0 [
+      (beam_urn) = "beam:env:docker:v1"
+    ];  // A managed docker container to run user code.
 
-    PROCESS = 1 [(beam_urn) = "beam:env:process:v1"]; // A managed native process to run user code.
+    PROCESS = 1 [
+      (beam_urn) = "beam:env:process:v1"
+    ];  // A managed native process to run user code.
 
-    EXTERNAL = 2 [(beam_urn) = "beam:env:external:v1"]; // An external non managed process to run user code.
+    EXTERNAL = 2 [
+      (beam_urn) = "beam:env:external:v1"
+    ];  // An external non managed process to run user code.
   }
 }
 
@@ -1463,10 +1475,10 @@ message DockerPayload {
 }
 
 message ProcessPayload {
-  string os = 1;  // "linux", "darwin", ..
-  string arch = 2;  // "amd64", ..
-  string command = 3; // process to execute
-  map<string, string> env = 4; // Environment variables
+  string os = 1;                // "linux", "darwin", ..
+  string arch = 2;              // "amd64", ..
+  string command = 3;           // process to execute
+  map<string, string> env = 4;  // Environment variables
 }
 
 message ExternalPayload {
@@ -1480,7 +1492,8 @@ message ExternalPayload {
 message StandardProtocols {
   enum Enum {
     // Indicates suport for progress reporting via the legacy Metrics proto.
-    LEGACY_PROGRESS_REPORTING = 0 [(beam_urn) = "beam:protocol:progress_reporting:v0"];
+    LEGACY_PROGRESS_REPORTING = 0
+        [(beam_urn) = "beam:protocol:progress_reporting:v0"];
 
     // Indicates suport for progress reporting via the new MonitoringInfo proto.
     PROGRESS_REPORTING = 1 [(beam_urn) = "beam:protocol:progress_reporting:v1"];
@@ -1491,10 +1504,11 @@ message StandardProtocols {
 
     // Indicates this SDK can take advantage of multiple cores when processing
     // concurrent process bundle requests. (Note that all SDKs must process
-    // an unbounded number of concurrent process bundle requests; this capability
-    // simply indicates this SDK can actually parallelize the work across multiple
-    // cores.
-    MULTI_CORE_BUNDLE_PROCESSING = 3 [(beam_urn) = "beam:protocol:multi_core_bundle_processing:v1"];
+    // an unbounded number of concurrent process bundle requests; this
+    // capability simply indicates this SDK can actually parallelize the work
+    // across multiple cores.
+    MULTI_CORE_BUNDLE_PROCESSING = 3
+        [(beam_urn) = "beam:protocol:multi_core_bundle_processing:v1"];
   }
 }
 
@@ -1507,23 +1521,28 @@ message StandardRequirements {
   enum Enum {
     // This requirement indicates the state_spec and time_spec fields of ParDo
     // transform payloads must be inspected.
-    REQUIRES_STATEFUL_PROCESSING = 0 [(beam_urn) = "beam:requirement:pardo:stateful:v1"];
+    REQUIRES_STATEFUL_PROCESSING = 0
+        [(beam_urn) = "beam:requirement:pardo:stateful:v1"];
 
     // This requirement indicates the requests_finalization field of ParDo
     // transform payloads must be inspected.
-    REQUIRES_BUNDLE_FINALIZATION = 1 [(beam_urn) = "beam:requirement:pardo:finalization:v1"];
+    REQUIRES_BUNDLE_FINALIZATION = 1
+        [(beam_urn) = "beam:requirement:pardo:finalization:v1"];
 
     // This requirement indicates the requires_stable_input field of ParDo
     // transform payloads must be inspected.
-    REQUIRES_STABLE_INPUT = 2 [(beam_urn) = "beam:requirement:pardo:stable_input:v1"];
+    REQUIRES_STABLE_INPUT = 2
+        [(beam_urn) = "beam:requirement:pardo:stable_input:v1"];
 
     // This requirement indicates the requires_time_sorted_input field of ParDo
     // transform payloads must be inspected.
-    REQUIRES_TIME_SORTED_INPUT = 3 [(beam_urn) = "beam:requirement:pardo:time_sorted_input:v1"];
+    REQUIRES_TIME_SORTED_INPUT = 3
+        [(beam_urn) = "beam:requirement:pardo:time_sorted_input:v1"];
 
     // This requirement indicates the restriction_coder_id field of ParDo
     // transform payloads must be inspected.
-    REQUIRES_SPLITTABLE_DOFN = 4 [(beam_urn) = "beam:requirement:pardo:splittable_dofn:v1"];
+    REQUIRES_SPLITTABLE_DOFN = 4
+        [(beam_urn) = "beam:requirement:pardo:splittable_dofn:v1"];
   }
 }
 
@@ -1587,7 +1606,6 @@ extend google.protobuf.EnumValueOptions {
 //    then be an opaque message such as bytes in a
 //    language-specific serialization format.
 message FunctionSpec {
-
   // (Required) A URN that describes the accompanying payload.
   // For any URN that is not recognized (by whomever is inspecting
   // it) the parameter payload should be treated as opaque and
@@ -1653,15 +1671,12 @@ message DisplayData {
   bytes payload = 2;
 }
 
-
 // The following transforms are not part of the RunnerApi specification,
 // but may be useful for graph construction and manipulation.
-
 
 // A disjoint union of all the things that may contain references
 // that require Components to resolve.
 message MessageWithComponents {
-
   // (Optional) The by-reference components of the root message,
   // enabling a standalone message.
   //
@@ -1685,68 +1700,75 @@ message MessageWithComponents {
   }
 }
 
-// The payload for an executable stage. This will eventually be passed to an SDK in the form of a
-// ProcessBundleDescriptor.
+// The payload for an executable stage. This will eventually be passed to an SDK
+// in the form of a ProcessBundleDescriptor.
 message ExecutableStagePayload {
-
   // (Required) Environment in which this stage executes.
   //
   // We use an environment rather than environment id
-  // because ExecutableStages use environments directly. This may change in the future.
+  // because ExecutableStages use environments directly. This may change in the
+  // future.
   Environment environment = 1;
 
   // The wire coder settings of this executable stage
   repeated WireCoderSetting wire_coder_settings = 9;
 
-  // (Required) Input PCollection id. This must be present as a value in the inputs of any
-  // PTransform the ExecutableStagePayload is the payload of.
+  // (Required) Input PCollection id. This must be present as a value in the
+  // inputs of any PTransform the ExecutableStagePayload is the payload of.
   string input = 2;
 
-  // The side inputs required for this executable stage. Each side input of each PTransform within
-  // this ExecutableStagePayload must be represented within this field.
+  // The side inputs required for this executable stage. Each side input of each
+  // PTransform within this ExecutableStagePayload must be represented within
+  // this field.
   repeated SideInputId side_inputs = 3;
 
-  // PTransform ids contained within this executable stage. This must contain at least one
-  // PTransform id.
+  // PTransform ids contained within this executable stage. This must contain at
+  // least one PTransform id.
   repeated string transforms = 4;
 
-  // Output PCollection ids. This must be equal to the values of the outputs of any
-  // PTransform the ExecutableStagePayload is the payload of.
+  // Output PCollection ids. This must be equal to the values of the outputs of
+  // any PTransform the ExecutableStagePayload is the payload of.
   repeated string outputs = 5;
 
-  // (Required) The components for the Executable Stage. This must contain all of the Transforms
-  // in transforms, and the closure of all of the components they recognize.
+  // (Required) The components for the Executable Stage. This must contain all
+  // of the Transforms in transforms, and the closure of all of the components
+  // they recognize.
   Components components = 6;
 
-  // The user states required for this executable stage. Each user state of each PTransform within
-  // this ExecutableStagePayload must be represented within this field.
+  // The user states required for this executable stage. Each user state of each
+  // PTransform within this ExecutableStagePayload must be represented within
+  // this field.
   repeated UserStateId user_states = 7;
 
-  // The timers required for this executable stage. Each timer of each PTransform within
-  // this ExecutableStagePayload must be represented within this field.
+  // The timers required for this executable stage. Each timer of each
+  // PTransform within this ExecutableStagePayload must be represented within
+  // this field.
   repeated TimerId timers = 8;
 
-  // The timerfamilies required for this executable stage. Each timer familyof each PTransform within
-  // this ExecutableStagePayload must be represented within this field.
+  // The timerfamilies required for this executable stage. Each timer familyof
+  // each PTransform within this ExecutableStagePayload must be represented
+  // within this field.
   repeated TimerFamilyId timerFamilies = 10;
 
-  // A reference to a side input. Side inputs are uniquely identified by PTransform id and
-  // local name.
+  // A reference to a side input. Side inputs are uniquely identified by
+  // PTransform id and local name.
   message SideInputId {
     // (Required) The id of the PTransform that references this side input.
     string transform_id = 1;
 
-    // (Required) The local name of this side input from the PTransform that references it.
+    // (Required) The local name of this side input from the PTransform that
+    // references it.
     string local_name = 2;
   }
 
-  // A reference to user state. User states are uniquely identified by PTransform id and
-  // local name.
+  // A reference to user state. User states are uniquely identified by
+  // PTransform id and local name.
   message UserStateId {
     // (Required) The id of the PTransform that references this user state.
     string transform_id = 1;
 
-    // (Required) The local name of this user state for the PTransform that references it.
+    // (Required) The local name of this user state for the PTransform that
+    // references it.
     string local_name = 2;
   }
 
@@ -1756,7 +1778,8 @@ message ExecutableStagePayload {
     // (Required) The id of the PTransform that references this timer.
     string transform_id = 1;
 
-    // (Required) The local name of this timer for the PTransform that references it.
+    // (Required) The local name of this timer for the PTransform that
+    // references it.
     string local_name = 2;
   }
 
@@ -1766,18 +1789,20 @@ message ExecutableStagePayload {
     // (Required) The id of the PTransform that references this timer family.
     string transform_id = 1;
 
-    // (Required) The local name of this timer family for the PTransform that references it.
+    // (Required) The local name of this timer family for the PTransform that
+    // references it.
     string local_name = 2;
   }
   // Settings that decide the coder type of wire coder.
   message WireCoderSetting {
     // (Required) The URN of the wire coder.
-    // Note that only windowed value coder or parameterized windowed value coder are supported.
+    // Note that only windowed value coder or parameterized windowed value coder
+    // are supported.
     string urn = 1;
 
     // (Optional) The data specifying any parameters to the URN. If
-    // the URN is beam:coder:windowed_value:v1, this may be omitted. If the URN is
-    // beam:coder:param_windowed_value:v1, the payload is an encoded windowed
+    // the URN is beam:coder:windowed_value:v1, this may be omitted. If the URN
+    // is beam:coder:param_windowed_value:v1, the payload is an encoded windowed
     // value using the beam:coder:windowed_value:v1 coder parameterized by
     // a beam:coder:bytes:v1 element coder and the window coder that this
     // param_windowed_value coder uses.

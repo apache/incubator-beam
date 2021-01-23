@@ -68,5 +68,5 @@ message ExpansionResponse {
 
 // Job Service for constructing pipelines
 service ExpansionService {
-  rpc Expand (ExpansionRequest) returns (ExpansionResponse);
+  rpc Expand(ExpansionRequest) returns (ExpansionResponse);
 }

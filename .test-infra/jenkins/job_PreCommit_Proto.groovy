@@ -16,22 +16,14 @@
  * limitations under the License.
  */
 
-// We vendor our own version of a PubsubMessage that is wire line compatible
-// with the PubsubMessage defined within
-// com.google.api.grpc:proto-google-cloud-pubsub-v1:1.18.0
+import PrecommitJobBuilder
 
-syntax = "proto3";
-
-package windmill;
-
-import "google/protobuf/timestamp.proto";
-
-option java_package = "org.apache.beam.runners.dataflow.worker.windmill";
-option java_outer_classname = "Pubsub";
-
-message PubsubMessage {
-  bytes data = 1;
-  map<string, string> attributes = 2;
-  string message_id = 3;
-  google.protobuf.Timestamp publish_time = 4;
-}
+PrecommitJobBuilder builder = new PrecommitJobBuilder(
+    scope: this,
+    nameBase: 'Proto',
+    gradleTask: ':protoPreCommit',
+    triggerPathPatterns: [
+      '*.proto$',
+    ],
+    )
+builder.build()
