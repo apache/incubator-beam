@@ -16,18 +16,22 @@
  * limitations under the License.
  */
 
-plugins { id 'org.apache.beam.vendor-java' }
+import org.apache.beam.gradle.Dependencies.getLibrary
+
+plugins {
+    id("org.apache.beam.vendor-java")
+}
 
 description = "Apache Beam :: Vendored Dependencies :: Calcite 1.20.0"
 
 group = "org.apache.beam"
 version = "0.2"
 
-def calcite_version = "1.20.0"
-def avatica_version = "1.16.0"
-def prefix = "org.apache.beam.vendor.calcite.v1_20_0"
+val calciteVersion = "1.20.0"
+val avaticaVersion = "1.16.0"
+val prefix = "org.apache.beam.vendor.calcite.v1_20_0"
 
-List<String> packagesToRelocate = [
+val packagesToRelocate = listOf(
         "com.esri",
         "com.google.common",
         "com.google.thirdparty",
@@ -41,24 +45,27 @@ List<String> packagesToRelocate = [
         "org.codehaus",
         "org.pentaho",
         "org.yaml"
-]
+)
 
+val vendorJava = project.extensions.extraProperties.get("vendorJava") as groovy.lang.Closure<*>
 vendorJava(
-        dependencies: [
-                "org.apache.calcite:calcite-core:$calcite_version",
-                "org.apache.calcite:calcite-linq4j:$calcite_version",
-                "org.apache.calcite.avatica:avatica-core:$avatica_version",
-                library.java.protobuf_java,
-                library.java.slf4j_api
-        ],
-        relocations: packagesToRelocate.collectEntries {
-            [ (it): "${prefix}.${it}" ] + [ "jdbc:calcite:": "jdbc:beam-vendor-calcite:"]
-        },
-        exclusions: [
-                "org/slf4j/**",
-                "**/module-info.class"
-        ],
-        groupId: group,
-        artifactId: "beam-vendor-calcite-1_20_0",
-        version: version,
+    mapOf(
+        "dependencies" to listOf(
+            "org.apache.calcite:calcite-core:$calciteVersion",
+            "org.apache.calcite:calcite-linq4j:$calciteVersion",
+            "org.apache.calcite.avatica:avatica-core:$avaticaVersion",
+            getLibrary().getValue("java").getValue("protobuf_java"),
+            getLibrary().getValue("java").getValue("slf4j_api")
+        ),
+        "relocations" to (packagesToRelocate.map {
+            (it) to "${prefix}.${it}"
+        } + ("jdbc:calcite:" to "jdbc:beam-vendor-calcite:")).toMap(),
+        "exclusions" to listOf(
+            "org/slf4j/**",
+            "**/module-info.class"
+        ),
+        "groupId" to group,
+        "artifactId" to "beam-vendor-calcite-1_20_0",
+        "version" to version
+    )
 )
