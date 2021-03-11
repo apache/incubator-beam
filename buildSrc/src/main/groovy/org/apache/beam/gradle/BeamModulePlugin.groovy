@@ -881,6 +881,9 @@ class BeamModulePlugin implements Plugin<Project> {
         "com.google.auto.value:auto-value-annotations:$autovalue_version",
         "com.google.code.findbugs:jsr305:$jsr305_version",
         "com.google.j2objc:j2objc-annotations:1.3",
+        "com.google.auto.value:auto-value-annotations:1.7.2",
+        "org.checkerframework:checker-qual:3.7.0",
+        "com.google.code.findbugs:jsr305:3.0.2",
         // These dependencies are needed to avoid error-prone warnings on package-info.java files,
         // also to include the annotations to suppress warnings.
         //
