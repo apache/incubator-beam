@@ -144,9 +144,9 @@ public class TrackStreamingSourcesTest {
       this.expected = expected;
     }
 
-    private void assertSourceIds(List<Integer> streamingSources) {
+    private void assertUpstreamWatermarkIds(List<Integer> upstreamWatermarkIds) {
       numAssertions++;
-      assertThat(streamingSources, containsInAnyOrder(expected));
+      assertThat(upstreamWatermarkIds, containsInAnyOrder(expected));
     }
 
     @Override
@@ -168,7 +168,7 @@ public class TrackStreamingSourcesTest {
         ctxt.setCurrentTransform(appliedTransform);
         //noinspection unchecked
         Dataset dataset = ctxt.borrowDataset((PTransform<? extends PValue, ?>) transform);
-        assertSourceIds(((UnboundedDataset<?>) dataset).getStreamSources());
+        assertUpstreamWatermarkIds(((UnboundedDataset<?>) dataset).getUpstreamWatermarkIds());
         ctxt.setCurrentTransform(null);
       } else {
         evaluator.visitPrimitiveTransform(node);

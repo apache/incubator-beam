@@ -42,6 +42,7 @@ import org.apache.beam.runners.spark.translation.ReifyTimestampsAndWindowsFuncti
 import org.apache.beam.runners.spark.translation.TranslationUtils;
 import org.apache.beam.runners.spark.util.ByteArray;
 import org.apache.beam.runners.spark.util.GlobalWatermarkHolder;
+import org.apache.beam.runners.spark.util.GlobalWatermarkHolder.SparkWatermarks;
 import org.apache.beam.runners.spark.util.TimerUtils;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.IterableCoder;
@@ -103,13 +104,21 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
   /** State and Timers wrapper. */
   public static class StateAndTimers implements Serializable {
     // Serializable state for internals (namespace to state tag to coded value).
+    private final Table<String, String, Instant> watermarkHoldStates;
     private final Table<String, String, byte[]> state;
     private final Collection<byte[]> serTimers;
 
     private StateAndTimers(
-        final Table<String, String, byte[]> state, final Collection<byte[]> timers) {
+        final Table<String, String, Instant> watermarkHoldStates,
+        final Table<String, String, byte[]> state,
+        final Collection<byte[]> timers) {
+      this.watermarkHoldStates = watermarkHoldStates;
       this.state = state;
       this.serTimers = timers;
+    }
+
+    Table<String, String, Instant> getWatermarkHoldStates() {
+      return watermarkHoldStates;
     }
 
     Table<String, String, byte[]> getState() {
@@ -185,7 +194,9 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
           // with pre-existing state.
           final StateAndTimers prevStateAndTimers = prevStateAndTimersOpt.get()._1();
           // get state(internals) per key.
-          stateInternals = SparkStateInternals.forKeyAndState(key, prevStateAndTimers.getState());
+          stateInternals =
+              SparkStateInternals.forKeyAndState(
+                  key, prevStateAndTimers.getWatermarkHoldStates(), prevStateAndTimers.getState());
 
           timerInternals.addTimers(
               SparkTimerInternals.deserializeTimers(
@@ -247,7 +258,8 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
               GlobalWatermarkHolder.get(getBatchDuration(options));
 
           final SparkTimerInternals timerInternals =
-              SparkTimerInternals.forStreamFromSources(sourceIds, watermarks);
+              SparkTimerInternals.forStreamFromUpstreamWatermarkIds(
+                  upstreamWatermarkIds, watermarks);
 
           final SparkStateInternals<K> stateInternals =
               processPreviousState(prevStateAndTimersOpt, key, timerInternals);
@@ -279,7 +291,7 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
                   FluentIterable.from(JavaConversions.asJavaIterable(encodedElements))
                       .transform(bytes -> CoderHelpers.fromByteArray(bytes, wvCoder));
 
-              LOG.trace(logPrefix + ": input elements: {}", elements);
+              LOG.trace("{}: input elements: {}", logPrefix, elements);
 
               // Incoming expired windows are filtered based on
               // timerInternals.currentInputWatermarkTime() and the configured allowed
@@ -294,7 +306,7 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
                       LateDataUtils.dropExpiredWindows(
                           key, elements, timerInternals, windowingStrategy, droppedDueToLateness));
 
-              LOG.trace(logPrefix + ": non expired input elements: {}", nonExpiredElements);
+              LOG.trace("{}: non expired input elements: {}", logPrefix, nonExpiredElements);
 
               reduceFnRunner.processElements(nonExpiredElements);
             } catch (final Exception e) {
@@ -307,7 +319,7 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
           try {
             // advance the watermark to HWM to fire by timers.
             LOG.debug(
-                logPrefix + ": timerInternals before advance are {}", timerInternals.toString());
+                "{}: timerInternals before advance are {}", logPrefix, timerInternals.toString());
 
             // store the highWatermark as the new inputWatermark to calculate triggers
             timerInternals.advanceWatermark();
@@ -317,7 +329,9 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
                     timerInternals.getTimers(), timerInternals.currentInputWatermarkTime());
 
             LOG.debug(
-                logPrefix + ": timers eligible for processing are {}", timersEligibleForProcessing);
+                "{}: timers eligible for processing are {}",
+                logPrefix,
+                timersEligibleForProcessing);
 
             // Note that at this point, the watermark has already advanced since
             // timerInternals.advanceWatermark() has been called and the highWatermark
@@ -337,6 +351,7 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
           }
           // this is mostly symbolic since actual persist is done by emitting output.
           reduceFnRunner.persist();
+
           // obtain output, if fired.
           final List<WindowedValue<KV<K, Iterable<InputT>>>> outputs =
               outputHolder.getWindowedValues();
@@ -348,15 +363,27 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
             // empty outputs are filtered later using DStream filtering
             final StateAndTimers updated =
                 new StateAndTimers(
+                    stateInternals.getWatermarkHoldStates(),
                     stateInternals.getState(),
                     SparkTimerInternals.serializeTimers(
                         timerInternals.getTimers(), timerDataCoder));
+
+            Instant lowerBound = timerInternals.currentInputWatermarkTime();
+            for (Instant holdTime : stateInternals.getWatermarkHoldStates().values()) {
+              if (holdTime.isBefore(lowerBound)) {
+                lowerBound = holdTime;
+              }
+            }
+            GlobalWatermarkHolder.add(
+                watermarkId,
+                new SparkWatermarks(
+                    lowerBound, lowerBound, timerInternals.currentSynchronizedProcessingTime()));
 
             /*
             Not something we want to happen in production, but is very helpful
             when debugging - TRACE.
              */
-            LOG.trace(logPrefix + ": output elements are {}", Joiner.on(", ").join(outputs));
+            LOG.trace("{}: output elements are {}", logPrefix, Joiner.on(", ").join(outputs));
 
             // persist Spark's state by outputting.
             final List<byte[]> serOutput = CoderHelpers.toByteArrays(outputs, wvKvIterCoder);
@@ -370,7 +397,8 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
 
     private final FullWindowedValueCoder<InputT> wvCoder;
     private final Coder<K> keyCoder;
-    private final List<Integer> sourceIds;
+    private final int watermarkId;
+    private final List<Integer> upstreamWatermarkIds;
     private final TimerInternals.TimerDataCoderV2 timerDataCoder;
     private final WindowingStrategy<?, W> windowingStrategy;
     private final SerializablePipelineOptions options;
@@ -379,7 +407,8 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
     private final Coder<WindowedValue<KV<K, Iterable<InputT>>>> wvKvIterCoder;
 
     UpdateStateByKeyFunction(
-        final List<Integer> sourceIds,
+        final int watermarkId,
+        final List<Integer> upstreamWatermarkIds,
         final WindowingStrategy<?, W> windowingStrategy,
         final FullWindowedValueCoder<InputT> wvCoder,
         final Coder<K> keyCoder,
@@ -387,7 +416,8 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
         final String logPrefix) {
       this.wvCoder = wvCoder;
       this.keyCoder = keyCoder;
-      this.sourceIds = sourceIds;
+      this.watermarkId = watermarkId;
+      this.upstreamWatermarkIds = upstreamWatermarkIds;
       this.timerDataCoder = timerDataCoderOf(windowingStrategy);
       this.windowingStrategy = windowingStrategy;
       this.options = options;
@@ -558,7 +588,8 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
           final Coder<WindowedValue<InputT>> wvCoder,
           final WindowingStrategy<?, W> windowingStrategy,
           final SerializablePipelineOptions options,
-          final List<Integer> sourceIds,
+          int watermarkId,
+          final List<Integer> upstreamWatermarkIds,
           final String transformFullName) {
 
     final PairDStreamFunctions<ByteArray, byte[]> pairDStream =
@@ -567,7 +598,8 @@ public class SparkGroupAlsoByWindowViaWindowSet implements Serializable {
     // use updateStateByKey to scan through the state and update elements and timers.
     final UpdateStateByKeyFunction<K, InputT, W> updateFunc =
         new UpdateStateByKeyFunction<>(
-            sourceIds,
+            watermarkId,
+            upstreamWatermarkIds,
             windowingStrategy,
             (FullWindowedValueCoder<InputT>) wvCoder,
             keyCoder,

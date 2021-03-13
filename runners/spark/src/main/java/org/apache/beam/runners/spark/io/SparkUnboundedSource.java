@@ -112,11 +112,16 @@ public class SparkUnboundedSource {
     checkpointStream(mapWithStateDStream, options);
 
     // report the number of input elements for this InputDStream to the InputInfoTracker.
-    int id = inputDStream.inputDStream().id();
     JavaDStream<Metadata> metadataDStream = mapWithStateDStream.map(new Tuple2MetadataFunction());
 
+    int watermarkId = GlobalWatermarkHolder.nextWatermarkId();
     // register ReadReportDStream to report information related to this read.
-    new ReadReportDStream(metadataDStream.dstream(), id, getSourceName(source, id), stepName)
+    new ReadReportDStream(
+            metadataDStream.dstream(),
+            inputDStream.inputDStream().id(),
+            watermarkId,
+            getSourceName(source, inputDStream.inputDStream().id()),
+            stepName)
         .register();
 
     // output the actual (deserialized) stream.
@@ -127,7 +132,7 @@ public class SparkUnboundedSource {
         mapWithStateDStream
             .flatMap(new Tuple2byteFlatMapFunction())
             .map(CoderHelpers.fromByteFunction(coder));
-    return new UnboundedDataset<>(readUnboundedStream, Collections.singletonList(id));
+    return new UnboundedDataset<>(readUnboundedStream, Collections.singletonList(watermarkId));
   }
 
   private static <T> String getSourceName(Source<T> source, int id) {
@@ -166,14 +171,20 @@ public class SparkUnboundedSource {
 
     private final DStream<Metadata> parent;
     private final int inputDStreamId;
+    private final int watermarkId;
     private final String sourceName;
     private final String stepName;
 
     ReadReportDStream(
-        DStream<Metadata> parent, int inputDStreamId, String sourceName, String stepName) {
+        DStream<Metadata> parent,
+        int inputDStreamId,
+        int watermarkId,
+        String sourceName,
+        String stepName) {
       super(parent.ssc(), JavaSparkContext$.MODULE$.fakeClassTag());
       this.parent = parent;
       this.inputDStreamId = inputDStreamId;
+      this.watermarkId = watermarkId;
       this.sourceName = sourceName;
       this.stepName = stepName;
     }
@@ -235,7 +246,7 @@ public class SparkUnboundedSource {
                 globalHighWatermarkForBatch,
                 new Instant(validTime.milliseconds()));
         // add to watermark queue.
-        GlobalWatermarkHolder.add(inputDStreamId, sparkWatermark);
+        GlobalWatermarkHolder.add(watermarkId, sparkWatermark);
       }
       // report - for RateEstimator and visibility.
       report(validTime, count, sparkWatermark);
