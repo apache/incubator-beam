@@ -63,7 +63,6 @@ import org.junit.runners.JUnit4;
  */
 @RunWith(JUnit4.class)
 public class ZetaSqlJavaUdfTest extends ZetaSqlTestBase {
-  @Rule public transient TestPipeline pipeline = TestPipeline.create();
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   private final String jarPathProperty = "beam.sql.udf.test.jar_path";
@@ -115,7 +114,7 @@ public class ZetaSqlJavaUdfTest extends ZetaSqlTestBase {
 
     PAssert.that(stream)
         .containsInAnyOrder(Row.withSchema(singleField).addValues("Hello world!").build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -139,7 +138,7 @@ public class ZetaSqlJavaUdfTest extends ZetaSqlTestBase {
             Row.withSchema(singleField).addValues(-2L).build(),
             Row.withSchema(singleField).addValues(-3L).build(),
             Row.withSchema(singleField).addValues(-4L).build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -157,7 +156,7 @@ public class ZetaSqlJavaUdfTest extends ZetaSqlTestBase {
     Schema singleField = Schema.builder().addInt64Field("field1").build();
 
     PAssert.that(stream).containsInAnyOrder(Row.withSchema(singleField).addValues(2L).build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -175,7 +174,7 @@ public class ZetaSqlJavaUdfTest extends ZetaSqlTestBase {
     thrown.expectMessage("CalcFn failed to evaluate");
     thrown.expectCause(
         allOf(isA(RuntimeException.class), hasProperty("cause", isA(NullPointerException.class))));
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -193,7 +192,7 @@ public class ZetaSqlJavaUdfTest extends ZetaSqlTestBase {
     Schema singleField = Schema.builder().addBooleanField("field1").build();
 
     PAssert.that(stream).containsInAnyOrder(Row.withSchema(singleField).addValues(true).build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   public static class IncrementFn implements BeamSqlUdf {
@@ -263,7 +262,7 @@ public class ZetaSqlJavaUdfTest extends ZetaSqlTestBase {
     Schema singleField = Schema.builder().addBooleanField("field1").build();
 
     PAssert.that(stream).containsInAnyOrder(Row.withSchema(singleField).addValues(true).build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test

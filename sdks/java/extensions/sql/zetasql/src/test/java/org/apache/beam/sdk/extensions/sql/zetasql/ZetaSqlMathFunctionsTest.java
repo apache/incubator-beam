@@ -36,8 +36,6 @@ import org.junit.runners.JUnit4;
 /** Tests for ZetaSQL Math functions (on INT64, DOUBLE, NUMERIC types). */
 @RunWith(JUnit4.class)
 public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
-
-  @Rule public transient TestPipeline pipeline = TestPipeline.create();
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Before
@@ -69,7 +67,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(-1L, 3L, -1L, 2L, 0.5)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -86,7 +84,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addInt64Field("f_int64_1").addInt64Field("f_int64_2").build())
                 .addValues(1L, 1L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -107,7 +105,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(0L, 1L, -1L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -123,7 +121,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_int64").build())
                 .addValues(0L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -140,7 +138,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addInt64Field("f_int64_1").addInt64Field("f_int64_2").build())
                 .addValues(0L, 2L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -168,7 +166,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(null, null, null, null, null)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -195,7 +193,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(3.0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NaN)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -218,7 +216,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(-1.5, 4.0, -1.0, 3.75, 0.6)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -240,7 +238,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(true, false)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -256,7 +254,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addBooleanField("f_boolean").build())
                 .addValues(false)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -277,7 +275,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(1.5, 1.0, Double.NaN)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -299,7 +297,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(0.0, 1.0, -1.0, Double.NaN)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -319,7 +317,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(1.0, -1.3)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -339,7 +337,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(1.0, -1.2)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -359,7 +357,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(2.0, -1.0)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -379,7 +377,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(1.0, -2.0)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -401,7 +399,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(true, true, false)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -421,7 +419,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(true, false)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -437,7 +435,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDoubleField("f_double").build())
                 .addValues(Double.POSITIVE_INFINITY)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -454,7 +452,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addNullableField("f_double", Schema.FieldType.DOUBLE).build())
                 .addValue(null)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -471,7 +469,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(2.0)
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -488,7 +486,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(8.0)
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -505,7 +503,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(7.38905609893065)
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -522,7 +520,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(2.0)
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -539,7 +537,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(2.0)
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -556,7 +554,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(2.0)
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -591,7 +589,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -640,7 +638,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     ZetaSqlCalciteTranslationUtils.ZETASQL_NUMERIC_MIN_VALUE,
                     ZetaSqlCalciteTranslationUtils.ZETASQL_NUMERIC_MAX_VALUE)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -664,7 +662,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(schema)
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("-555.5555"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -697,7 +695,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("-0.123123"),
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("123"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -719,7 +717,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("12345.6"),
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("12345.6"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -743,7 +741,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("1"),
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("-1"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -765,7 +763,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("12346"),
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("-12345.7"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -787,7 +785,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("12345"),
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("-12345.6"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -809,7 +807,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("12346"),
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("-12345"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -831,7 +829,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("12345"),
                     ZetaSqlTypesUtils.bigDecimalAsNumeric("-12346"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -847,7 +845,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDecimalField("f_numeric").build())
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("1"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -863,7 +861,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDecimalField("f_numeric").build())
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("24691"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -896,7 +894,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                     null,
                     ZetaSqlCalciteTranslationUtils.ZETASQL_NUMERIC_MIN_VALUE)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -913,7 +911,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("2"))
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -930,7 +928,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("8"))
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -947,7 +945,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("7.389056099"))
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -964,7 +962,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("2"))
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -981,7 +979,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("2"))
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -998,7 +996,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("2"))
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1015,7 +1013,7 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDecimalField("f_numeric").build())
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("333.3333"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1032,6 +1030,6 @@ public class ZetaSqlMathFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDecimalField("f_numeric").build())
                 .addValues(ZetaSqlTypesUtils.bigDecimalAsNumeric("111.1111"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 }

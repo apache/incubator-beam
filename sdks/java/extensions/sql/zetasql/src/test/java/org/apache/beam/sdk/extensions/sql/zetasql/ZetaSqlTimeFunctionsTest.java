@@ -50,8 +50,6 @@ import org.junit.runners.JUnit4;
 /** Tests for ZetaSQL time functions (DATE, TIME, DATETIME, and TIMESTAMP functions). */
 @RunWith(JUnit4.class)
 public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
-
-  @Rule public transient TestPipeline pipeline = TestPipeline.create();
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Before
@@ -76,7 +74,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_date", SqlTypes.DATE).build())
                 .addValues(LocalDate.of(2020, 3, 30))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -95,7 +93,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addStringField("f_date_str").build())
                 .addValues("Apr-07-2020")
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -115,7 +113,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
         .containsInAnyOrder(
             Row.withSchema(schema).addValues(LocalDate.of(2008, 12, 25), 1L).build(),
             Row.withSchema(schema).addValues(LocalDate.of(2020, 4, 7), 1L).build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -132,7 +130,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("date_field", SqlTypes.DATE).build())
                 .addValues(LocalDate.of(2020, 4, 7))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   // TODO[BEAM-9166]: Add a test for CURRENT_DATE function ("SELECT CURRENT_DATE()")
@@ -183,7 +181,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                 .addValues(2015L, 2016L, 53L /* , 0L */, 1L, 1L, 1L, 1L, 6L)
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -199,7 +197,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_date", SqlTypes.DATE).build())
                 .addValues(LocalDate.of(2008, 12, 25))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -215,7 +213,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_date", SqlTypes.DATE).build())
                 .addValues(LocalDate.of(2016, 12, 24))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -231,7 +229,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_date", SqlTypes.DATE).build())
                 .addValues(LocalDate.of(2008, 12, 25))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -259,7 +257,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     LocalDate.of(2009, 1, 25),
                     LocalDate.of(2009, 12, 25))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -308,7 +306,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     LocalDate.of(1999, 3, 1),
                     LocalDate.of(1999, 2, 28))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -336,7 +334,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     LocalDate.of(2008, 11, 25),
                     LocalDate.of(2007, 12, 25))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -352,7 +350,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_date_diff").build())
                 .addValues(559L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -368,7 +366,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_date_diff").build())
                 .addValues(-1L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -385,7 +383,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("f_date_trunc", SqlTypes.DATE).build())
                 .addValues(LocalDate.of(2014, 12, 29))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -401,7 +399,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addStringField("f_date_str").build())
                 .addValues("Dec-25-2008")
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -417,7 +415,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_date", SqlTypes.DATE).build())
                 .addValues(LocalDate.of(2018, 10, 14))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -433,7 +431,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_unix_date").build())
                 .addValues(14238L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -449,7 +447,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_date", SqlTypes.DATE).build())
                 .addValues(LocalDate.of(2008, 12, 25))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -474,7 +472,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                 .addValues(LocalTime.of(15, 30, 0))
                 .addValues(LocalTime.of(15, 30, 0, 135246000))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -493,7 +491,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addStringField("f_time_str").build())
                 .addValues("23:35:59")
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -513,7 +511,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
         .containsInAnyOrder(
             Row.withSchema(schema).addValues(LocalTime.of(15, 30, 0), 1L).build(),
             Row.withSchema(schema).addValues(LocalTime.of(23, 35, 59), 1L).build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -530,7 +528,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("time_field", SqlTypes.TIME).build())
                 .addValues(LocalTime.of(23, 35, 59))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   // TODO[BEAM-9166]: Add a test for CURRENT_TIME function ("SELECT CURRENT_TIME()")
@@ -560,7 +558,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
     PAssert.that(stream)
         .containsInAnyOrder(Row.withSchema(schema).addValues(15L, 30L, 35L, 123L, 123456L).build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -576,7 +574,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_time", SqlTypes.TIME).build())
                 .addValues(LocalTime.of(15, 30, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -592,7 +590,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_time", SqlTypes.TIME).build())
                 .addValues(LocalTime.of(23, 30, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -608,7 +606,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_time", SqlTypes.TIME).build())
                 .addValues(LocalTime.of(15, 30, 0, 123456000))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -642,7 +640,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     LocalTime.of(15, 40, 0, 0),
                     LocalTime.of(1, 30, 0, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -662,7 +660,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_time", SqlTypes.TIME).build())
                 .addValues(LocalTime.of(12, 13, 15, 123000000))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -696,7 +694,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     LocalTime.of(15, 20, 0, 0),
                     LocalTime.of(5, 30, 0, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -712,7 +710,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_time_diff").build())
                 .addValues(55L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -728,7 +726,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_time_diff").build())
                 .addValues(-55L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -745,7 +743,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("f_time_trunc", SqlTypes.TIME).build())
                 .addValues(LocalTime.of(15, 0, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -761,7 +759,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addStringField("f_time_str").build())
                 .addValues("15:30")
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -777,7 +775,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("f_time", SqlTypes.TIME).build())
                 .addValues(LocalTime.of(15, 0, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -798,7 +796,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("f_datetime", SqlTypes.DATETIME).build())
                 .addValues(LocalDateTime.of(2008, 12, 25, 15, 30, 0).withNano(123456000))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -817,7 +815,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addStringField("f_datetime_str").build())
                 .addValues("10/06/12 11:45:00 00.987654")
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -841,7 +839,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(schema)
                 .addValues(LocalDateTime.of(2012, 10, 6, 11, 45, 0).withNano(987654000), 1L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -860,7 +858,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(LocalDateTime.of(2012, 10, 6, 11, 45, 0).withNano(987654000))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   // TODO[BEAM-9166]: Add a test for CURRENT_DATETIME function ("SELECT CURRENT_DATETIME()")
@@ -927,7 +925,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     LocalTime.of(15, 30, 0, 123456000))
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -944,7 +942,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("f_datetime", SqlTypes.DATETIME).build())
                 .addValues(LocalDateTime.of(2008, 12, 25, 15, 30, 0).withNano(123456000))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -961,7 +959,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("f_datetime", SqlTypes.DATETIME).build())
                 .addValues(LocalDateTime.of(2008, 12, 25, 0, 0, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -978,7 +976,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("f_datetime", SqlTypes.DATETIME).build())
                 .addValues(LocalDateTime.of(2008, 12, 25, 15, 30, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -995,7 +993,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("f_datetime", SqlTypes.DATETIME).build())
                 .addValues(LocalDateTime.of(2008, 12, 24, 23, 30, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1041,7 +1039,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     LocalDateTime.of(2011, 6, 25, 15, 30, 0),
                     LocalDateTime.of(2018, 12, 25, 15, 30, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1064,7 +1062,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("f_datetime", SqlTypes.DATETIME).build())
                 .addValues(LocalDateTime.of(2008, 12, 25, 18, 30, 0).withNano(123456000))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1110,7 +1108,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     LocalDateTime.of(2006, 6, 25, 15, 30, 0),
                     LocalDateTime.of(1998, 12, 25, 15, 30, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1127,7 +1125,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_datetime_diff").build())
                 .addValues(61L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1144,7 +1142,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_datetime_diff").build())
                 .addValues(-61L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1163,7 +1161,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(LocalDateTime.of(2008, 12, 25, 15, 0, 0))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1179,7 +1177,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addStringField("f_datetime_str").build())
                 .addValues("12/25/08 15:30:00 00.123456")
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1196,7 +1194,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("f_datetime", SqlTypes.DATETIME).build())
                 .addValues(LocalDateTime.of(2008, 12, 25, 15, 30, 0).withNano(123456000))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1235,7 +1233,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("field1").build())
                 .addValues(parseTimestampWithUTCTimeZone("2016-12-25 05:30:00"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1251,7 +1249,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("field1").build())
                 .addValues(parseTimestampWithUTCTimeZone("2016-12-25 05:30:00"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1267,7 +1265,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("f_timestamp_with_time_zone").build())
                 .addValues(parseTimestampWithTimeZone("2018-12-10 10:38:59-1000"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   // TODO[BEAM-9166]: Add a test for CURRENT_TIMESTAMP function ("SELECT CURRENT_TIMESTAMP()")
@@ -1327,7 +1325,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                 .addValues(2009L, 2009L, 53L /* , 52L */, 12L, 4L, 31L, 365L, 5L, 0L, 0L, 0L, 0L)
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1343,7 +1341,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("date", SqlTypes.DATE).build())
                 .addValues(LocalDate.of(2017, 5, 26))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1359,7 +1357,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addLogicalTypeField("time", SqlTypes.TIME).build())
                 .addValues(LocalTime.of(12, 34, 56))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1376,7 +1374,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     Schema.builder().addLogicalTypeField("datetime", SqlTypes.DATETIME).build())
                 .addValues(LocalDateTime.of(2017, 5, 26, 12, 34, 56))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1407,7 +1405,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                 .addValues(31L, LocalDate.of(2007, 12, 31), LocalTime.of(20, 34, 56, 789000000))
                 .build());
 
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1423,7 +1421,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addStringField("f_timestamp_string").build())
                 .addValues("2008-12-25 07:30:00-08")
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1439,7 +1437,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("f_timestamp").build())
                 .addValues(parseTimestampWithTimeZone("2008-12-25 15:30:00-08"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1455,7 +1453,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("f_timestamp").build())
                 .addValues(parseTimestampWithTimeZone("2014-01-31 00:00:00+00"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1478,7 +1476,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("f_timestamp").build())
                 .addValues(parseTimestampWithTimeZone("2014-01-31 00:00:00+08"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1494,7 +1492,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("f_timestamp").build())
                 .addValues(parseTimestampWithTimeZone("2008-12-25 15:30:00+00"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1517,7 +1515,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("f_timestamp").build())
                 .addValues(parseTimestampWithTimeZone("2008-12-25 15:30:00+08"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1542,7 +1540,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     DateTimeUtils.parseTimestampWithUTCTimeZone("2008-12-25 15:40:00"),
                     parseTimestampWithTimeZone("2008-12-25 15:40:00+0730"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1563,7 +1561,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(schema)
                 .addValues(parseTimestampWithTimeZone("2001-01-01 00:00:00.001+00"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1584,7 +1582,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(schema)
                 .addValues(parseTimestampWithTimeZone("2008-12-25 15:40:00+07:30"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1609,7 +1607,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     DateTimeUtils.parseTimestampWithUTCTimeZone("2008-12-25 15:20:00"),
                     parseTimestampWithTimeZone("2008-12-25 15:20:00+0730"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1629,7 +1627,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_timestamp_diff").build())
                 .addValues((61L * 24 * 60 + 25) * 60 * 1000 - 1)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1645,7 +1643,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addInt64Field("f_timestamp_diff").build())
                 .addValues(-61L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1661,7 +1659,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("f_timestamp_trunc").build())
                 .addValues(DateTimeUtils.parseTimestampWithUTCTimeZone("2017-10-30 00:00:00"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1677,7 +1675,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addStringField("f_timestamp_str").build())
                 .addValues("10/14/18 15:30:00")
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1693,7 +1691,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
             Row.withSchema(Schema.builder().addDateTimeField("f_timestamp").build())
                 .addValues(DateTimeUtils.parseTimestampWithUTCTimeZone("2018-10-14 15:30:00"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1715,7 +1713,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     DateTimeUtils.parseTimestampWithUTCTimeZone("2008-12-25 15:30:00"),
                     DateTimeUtils.parseTimestampWithUTCTimeZone("2008-12-25 15:30:00.123"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1738,7 +1736,7 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                         .build())
                 .addValues(1230219000L, 1230219000123L)
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 
   @Test
@@ -1763,6 +1761,6 @@ public class ZetaSqlTimeFunctionsTest extends ZetaSqlTestBase {
                     DateTimeUtils.parseTimestampWithUTCTimeZone("2008-12-25 15:30:00"),
                     DateTimeUtils.parseTimestampWithUTCTimeZone("2008-12-25 15:30:00.123"))
                 .build());
-    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+    pipeline.run().waitUntilFinish(PIPELINE_EXECUTION_WAITTIME);
   }
 }
