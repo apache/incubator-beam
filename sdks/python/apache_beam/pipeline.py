@@ -102,7 +102,7 @@ from apache_beam.utils.interactive_utils import alter_label_if_ipython
 if TYPE_CHECKING:
   from types import TracebackType
   from apache_beam.portability.api import beam_runner_api_pb2
-  from apache_beam.runners.pipeline_context import PipelineContext
+  from apache_beam.internal.pipeline.context import PipelineContext
   from apache_beam.runners.runner import PipelineResult
   from apache_beam.transforms import environments
 
@@ -825,7 +825,7 @@ class Pipeline(object):
     # type: (...) -> beam_runner_api_pb2.Pipeline
 
     """For internal use only; no backwards-compatibility guarantees."""
-    from apache_beam.runners import pipeline_context
+    from apache_beam.internal.pipeline import context as pipeline_context
     from apache_beam.portability.api import beam_runner_api_pb2
     if context is None:
       context = pipeline_context.PipelineContext(
@@ -908,7 +908,7 @@ class Pipeline(object):
 
     """For internal use only; no backwards-compatibility guarantees."""
     p = Pipeline(runner=runner, options=options)
-    from apache_beam.runners import pipeline_context
+    from apache_beam.internal.pipeline import context as pipeline_context
     context = pipeline_context.PipelineContext(
         proto.components, requirements=proto.requirements)
     if proto.root_transform_ids:
