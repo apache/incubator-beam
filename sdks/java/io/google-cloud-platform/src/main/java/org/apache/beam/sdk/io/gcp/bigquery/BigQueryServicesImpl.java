@@ -918,7 +918,7 @@ class BigQueryServicesImpl implements BigQueryServices {
                               && !errorInfo.getReason().equals(QUOTA_EXCEEDED)) {
                             throw e;
                           }
-                          LOG.info(
+                          LOG.warn(
                               String.format(
                                   "BigQuery insertAll error, retrying: %s",
                                   ApiErrorExtractor.INSTANCE.getErrorMessage(e)));
