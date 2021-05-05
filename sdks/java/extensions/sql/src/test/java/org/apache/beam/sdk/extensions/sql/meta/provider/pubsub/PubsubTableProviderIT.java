@@ -451,8 +451,8 @@ public class PubsubTableProviderIT implements Serializable {
         queryResult.get(1, TimeUnit.SECONDS);
       } catch (TimeoutException e) {
         // Nothing went wrong on the forked thread, but a subscription still wasn't created.
-        throw assertionError;
       }
+      throw assertionError;
     }
     eventsTopic.publish(messages);
     assertThat(queryResult.get(2, TimeUnit.MINUTES).size(), equalTo(3));
