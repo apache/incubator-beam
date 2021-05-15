@@ -32,6 +32,14 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import org.apache.beam.runners.spark.util.ByteArray;
 import org.apache.beam.sdk.coders.Coder;
+import org.apache.beam.sdk.transforms.windowing.BoundedWindow;
+import org.apache.beam.sdk.transforms.windowing.GlobalWindows;
+import org.apache.beam.sdk.transforms.windowing.WindowFn;
+import org.apache.beam.sdk.util.WindowedValue.FullWindowedValueCoder;
+import org.apache.beam.sdk.util.WindowedValue.ParamWindowedValueCoder;
+import org.apache.beam.sdk.util.WindowedValue.ValueOnlyWindowedValueCoder;
+import org.apache.beam.sdk.util.WindowedValue.WindowedValueCoder;
+import org.apache.beam.sdk.values.WindowingStrategy;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.joda.time.Instant;
@@ -249,5 +257,34 @@ public final class CoderHelpers {
             StreamSupport.stream(tuple._2().spliterator(), false)
                 .map(bytes -> fromByteArray(bytes, valueCoder))
                 .collect(Collectors.toList()));
+  }
+
+  /**
+   * @return a {@link WindowedValueCoder} depending on the given {@link WindowingStrategy} coder, if
+   *     it is based on {@link GlobalWindows} it creates a {@link ValueOnlyWindowedValueCoder} to
+   *     optimize encoding, otherwise it creates a {@link FullWindowedValueCoder}.
+   */
+  public static <T> WindowedValueCoder<T> windowedValueCoder(
+      Coder<T> valueCoder, WindowingStrategy<?, ?> windowingStrategy) {
+    WindowFn<?, ?> windowFn = windowingStrategy.getWindowFn();
+    Coder<? extends BoundedWindow> windowCoder = windowFn.windowCoder();
+    return (isSupported(windowingStrategy) && windowFn instanceof GlobalWindows)
+        ? ParamWindowedValueCoder.of(valueCoder)
+        : FullWindowedValueCoder.of(valueCoder, windowCoder);
+  }
+
+  private static boolean isSupported(WindowingStrategy<?, ?> strategy) {
+    if (strategy.needsMerge()) {
+      return false;
+    }
+
+    // It must be possible to compute the output timestamp of a pane from the input timestamp
+    // of the element with the earliest input timestamp.
+    if (!strategy.getTimestampCombiner().dependsOnlyOnEarliestTimestamp()
+        && !strategy.getTimestampCombiner().dependsOnlyOnWindow()) {
+      return false;
+    }
+
+    return true;
   }
 }
