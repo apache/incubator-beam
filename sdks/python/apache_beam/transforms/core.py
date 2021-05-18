@@ -2334,6 +2334,22 @@ class GroupByKey(PTransform):
   def runner_api_requires_keyed_input(self):
     return True
 
+  def get_windowing(self, inputs):
+    # Circular dep, because trigger pulls in CombineFn
+    from apache_beam.transforms.trigger import AfterProcessingTime
+    from apache_beam.transforms.trigger import _AfterSynchronizedProcessingTime
+    windowing = inputs[0].windowing
+    if isinstance(windowing.triggerfn, AfterProcessingTime):
+      return Windowing(
+          windowing.windowfn,
+          triggerfn=_AfterSynchronizedProcessingTime(),
+          accumulation_mode=windowing.accumulation_mode,
+          timestamp_combiner=windowing.timestamp_combiner,
+          allowed_lateness=windowing.allowed_lateness,
+          environment_id=windowing.environment_id)
+    else:
+      return windowing
+
 
 def _expr_to_callable(expr, pos):
   if isinstance(expr, str):
