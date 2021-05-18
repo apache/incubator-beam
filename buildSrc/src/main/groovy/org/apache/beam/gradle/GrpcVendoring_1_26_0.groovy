@@ -77,7 +77,8 @@ class GrpcVendoring_1_26_0 {
       "org.eclipse.jetty.alpn:alpn-api:$alpn_api_version",
       "org.eclipse.jetty.npn:npn-api:$npn_api_version",
       "org.jboss.marshalling:jboss-marshalling:$jboss_marshalling_version",
-      "org.jboss.modules:jboss-modules:$jboss_modules_version"
+      "org.jboss.modules:jboss-modules:$jboss_modules_version",
+      "io.grpc:grpc-api:$grpc_version"
     ]
   }
 
@@ -91,6 +92,7 @@ class GrpcVendoring_1_26_0 {
       'commons-logging:commons-logging:1.2',
       'org.apache.logging.log4j:log4j-api:2.6.2',
       'org.slf4j:slf4j-api:1.7.30',
+      'com.google.errorprone:error_prone_annotations:2.3.3',
       // TODO(BEAM-9288): Enable relocation for conscrypt
       "org.conscrypt:conscrypt-openjdk-uber:$conscrypt_version"
     ]

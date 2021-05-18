@@ -17,9 +17,15 @@
  */
 
 plugins { id 'org.apache.beam.module' }
-applyPortabilityNature(
+/*applyPortabilityNature(
     automaticModuleName: 'org.apache.beam.model.pipeline',
     shadowJarValidationExcludes: ["org/apache/beam/model/pipeline/v1/**"]
+)*/
+
+applyJavaNature(
+        enableStrictDependencies: true,
+        automaticModuleName: 'org.apache.beam.model.pipeline',
+        shadowJarValidationExcludes: ["org/apache/beam/model/pipeline/v1/**"]
 )
 
 description = "Apache Beam :: Model :: Pipeline"
