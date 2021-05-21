@@ -103,6 +103,17 @@ public class JdbcIOTest implements Serializable {
   private static final int EXPECTED_ROW_COUNT = 1000;
   private static final String READ_TABLE_NAME = DatabaseTestHelper.getTestTableName("UT_READ");
 
+  private static class TestDto {
+
+    public static final int EMPTY_RESULT = 0;
+
+    private int rowsUpdated;
+
+    public TestDto(int rowsUpdated) {
+      this.rowsUpdated = rowsUpdated;
+    }
+  }
+
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
 
   @Rule public final transient ExpectedLogs expectedLogs = ExpectedLogs.none(JdbcIO.class);
@@ -351,7 +362,40 @@ public class JdbcIOTest implements Serializable {
   }
 
   @Test
-  public void testWriteWithResultsAndWaitOn() throws Exception {
+  public void testWriteWithReturningResultsAndWaitOn() throws Exception {
+    String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
+    String secondTableName = DatabaseTestHelper.getTestTableName("UT_WRITE_AFTER_WAIT");
+    DatabaseTestHelper.createTable(DATA_SOURCE, firstTableName);
+    DatabaseTestHelper.createTable(DATA_SOURCE, secondTableName);
+    try {
+      ArrayList<KV<Integer, String>> data = getDataToWrite(EXPECTED_ROW_COUNT);
+
+      PCollection<KV<Integer, String>> dataCollection = pipeline.apply(Create.of(data));
+      PCollection<TestDto> resultSetCollection =
+          dataCollection.apply(getJdbcWrite(firstTableName).withReturningResults(
+              (resultSet -> {
+                if (resultSet.next()) {
+                  return new TestDto(resultSet.getInt(1));
+                }
+                return new TestDto(TestDto.EMPTY_RESULT);
+              })
+          ));
+
+      PAssert.that(resultSetCollection).containsInAnyOrder(
+          new TestDto(1));
+      dataCollection.apply(Wait.on(resultSetCollection)).apply(getJdbcWrite(secondTableName));
+
+      pipeline.run();
+
+      assertRowCount(firstTableName, EXPECTED_ROW_COUNT);
+      assertRowCount(secondTableName, EXPECTED_ROW_COUNT);
+    } finally {
+      DatabaseTestHelper.deleteTable(DATA_SOURCE, firstTableName);
+    }
+  }
+
+  @Test
+  public void testWriteWithVoidResultsAndWaitOn() throws Exception {
     String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
     String secondTableName = DatabaseTestHelper.getTestTableName("UT_WRITE_AFTER_WAIT");
     DatabaseTestHelper.createTable(DATA_SOURCE, firstTableName);
@@ -361,7 +405,7 @@ public class JdbcIOTest implements Serializable {
 
       PCollection<KV<Integer, String>> dataCollection = pipeline.apply(Create.of(data));
       PCollection<Void> rowsWritten =
-          dataCollection.apply(getJdbcWrite(firstTableName).withResults());
+          dataCollection.apply(getJdbcWrite(firstTableName).withVoidResults());
       dataCollection.apply(Wait.on(rowsWritten)).apply(getJdbcWrite(secondTableName));
 
       pipeline.run();

@@ -262,10 +262,10 @@ public class JdbcIO {
    * @param <T> Type of the data to be written.
    */
   public static <T> Write<T> write() {
-    return new Write();
+    return new Write<>();
   }
 
-  public static <T> WriteVoid<T> writeVoid() {
+  private static <T> WriteVoid<T> writeVoid() {
     return new AutoValue_JdbcIO_WriteVoid.Builder<T>()
         .setBatchSize(DEFAULT_BATCH_SIZE)
         .setRetryStrategy(new DefaultRetryStrategy())
@@ -993,6 +993,11 @@ public class JdbcIO {
     void setParameters(T element, PreparedStatement preparedStatement) throws Exception;
   }
 
+  @FunctionalInterface
+  public interface ResultSetGetter<T> extends Serializable {
+    T getResult(ResultSet resultSet) throws Exception;
+  }
+
   /**
    * An interface used to control if we retry the statements when a {@link SQLException} occurs. If
    * {@link RetryStrategy#apply(SQLException)} returns true, {@link Write} tries to replay the
@@ -1070,13 +1075,21 @@ public class JdbcIO {
      *
      * <pre>{@code
      * PCollection<Void> firstWriteResults = data.apply(JdbcIO.write()
-     *     .withDataSourceConfiguration(CONF_DB_1).withResults());
+     *     .withDataSourceConfiguration(CONF_DB_1).withVoidResults());
      * data.apply(Wait.on(firstWriteResults))
      *     .apply(JdbcIO.write().withDataSourceConfiguration(CONF_DB_2));
      * }</pre>
      */
-    public WriteVoid<T> withResults() {
+    public WriteVoid<T> withVoidResults() {
       return inner;
+    }
+
+    public <U> WriteWithResults<T, U> withReturningResults(ResultSetGetter<U> resultSetGetter) {
+      return new AutoValue_JdbcIO_WriteWithResults.Builder<T, U>()
+          .setResultSetGetter(resultSetGetter)
+          .setRetryStrategy(new DefaultRetryStrategy())
+          .setRetryConfiguration(RetryConfiguration.create(5, null, Duration.standardSeconds(5)))
+          .build();
     }
 
     @Override
@@ -1119,7 +1132,6 @@ public class JdbcIO {
           PreparedStatement statement =
               connection.prepareStatement((String.format("SELECT * FROM %s", inner.getTable())))) {
         tableSchema = SchemaUtil.toBeamSchema(statement.getMetaData());
-        statement.close();
       } catch (SQLException e) {
         throw new RuntimeException(
             "Error while determining columns from table: " + inner.getTable(), e);
@@ -1222,7 +1234,226 @@ public class JdbcIO {
         throws SQLException;
   }
 
-  /** A {@link PTransform} to write to a JDBC datasource. */
+  public abstract static class WriteWithResults<T, U> extends PTransform<PCollection<T>, PCollection<U>> {
+    abstract @Nullable SerializableFunction<Void, DataSource> getDataSourceProviderFn();
+
+    abstract @Nullable ValueProvider<String> getStatement();
+
+    abstract @Nullable PreparedStatementSetter<T> getPreparedStatementSetter();
+
+    abstract @Nullable RetryStrategy getRetryStrategy();
+
+    abstract @Nullable RetryConfiguration getRetryConfiguration();
+
+    abstract @Nullable String getTable();
+
+    abstract @Nullable ResultSetGetter<U> getResultSetGetter();
+
+    abstract WriteVoid.Builder<T> toBuilder();
+
+    @AutoValue.Builder
+    abstract static class Builder<T> {
+      abstract WriteVoid.Builder<T> setDataSourceProviderFn(
+          SerializableFunction<Void, DataSource> dataSourceProviderFn);
+
+      abstract WriteVoid.Builder<T> setStatement(ValueProvider<String> statement);
+
+      abstract WriteVoid.Builder<T> setPreparedStatementSetter(PreparedStatementSetter<T> setter);
+
+      abstract WriteVoid.Builder<T> setRetryStrategy(RetryStrategy deadlockPredicate);
+
+      abstract WriteVoid.Builder<T> setRetryConfiguration(RetryConfiguration retryConfiguration);
+
+      abstract WriteVoid.Builder<T> setTable(String table);
+
+      abstract WriteVoid.Builder<T> setResultSetGetter(ResultSetGetter resultSetGetter);
+
+      abstract WriteVoid<T> build();
+    }
+
+    public WriteVoid<T> withDataSourceConfiguration(DataSourceConfiguration config) {
+      return withDataSourceProviderFn(new DataSourceProviderFromDataSourceConfiguration(config));
+    }
+
+    public WriteVoid<T> withDataSourceProviderFn(
+        SerializableFunction<Void, DataSource> dataSourceProviderFn) {
+      return toBuilder().setDataSourceProviderFn(dataSourceProviderFn).build();
+    }
+
+    public WriteVoid<T> withStatement(String statement) {
+      return withStatement(ValueProvider.StaticValueProvider.of(statement));
+    }
+
+    public WriteVoid<T> withStatement(ValueProvider<String> statement) {
+      return toBuilder().setStatement(statement).build();
+    }
+
+    public WriteVoid<T> withPreparedStatementSetter(PreparedStatementSetter<T> setter) {
+      return toBuilder().setPreparedStatementSetter(setter).build();
+    }
+
+    /**
+     * When a SQL exception occurs, {@link Write} uses this {@link RetryStrategy} to determine if it
+     * will retry the statements. If {@link RetryStrategy#apply(SQLException)} returns {@code true},
+     * then {@link Write} retries the statements.
+     */
+    public WriteVoid<T> withRetryStrategy(RetryStrategy retryStrategy) {
+      checkArgument(retryStrategy != null, "retryStrategy can not be null");
+      return toBuilder().setRetryStrategy(retryStrategy).build();
+    }
+
+    /**
+     * When a SQL exception occurs, {@link Write} uses this {@link RetryConfiguration} to
+     * exponentially back off and retry the statements based on the {@link RetryConfiguration}
+     * mentioned.
+     *
+     * <p>Usage of RetryConfiguration -
+     *
+     * <pre>{@code
+     * pipeline.apply(JdbcIO.<T>write())
+     *    .withDataSourceConfiguration(...)
+     *    .withRetryStrategy(...)
+     *    .withRetryConfiguration(JdbcIO.RetryConfiguration.
+     *        create(5, Duration.standardSeconds(5), Duration.standardSeconds(1))
+     *
+     * }</pre>
+     *
+     * maxDuration and initialDuration are Nullable
+     *
+     * <pre>{@code
+     * pipeline.apply(JdbcIO.<T>write())
+     *    .withDataSourceConfiguration(...)
+     *    .withRetryStrategy(...)
+     *    .withRetryConfiguration(JdbcIO.RetryConfiguration.
+     *        create(5, null, null)
+     *
+     * }</pre>
+     */
+    public WriteVoid<T> withRetryConfiguration(RetryConfiguration retryConfiguration) {
+      checkArgument(retryConfiguration != null, "retryConfiguration can not be null");
+      return toBuilder().setRetryConfiguration(retryConfiguration).build();
+    }
+
+    public WriteVoid<T> withTable(String table) {
+      checkArgument(table != null, "table name can not be null");
+      return toBuilder().setTable(table).build();
+    }
+
+    @Override
+    public PCollection<U> expand(PCollection<T> input) {
+      checkArgument(getStatement() != null, "withStatement() is required");
+      checkArgument(
+          getPreparedStatementSetter() != null, "withPreparedStatementSetter() is required");
+      checkArgument(
+          (getDataSourceProviderFn() != null),
+          "withDataSourceConfiguration() or withDataSourceProviderFn() is required");
+
+      return input.apply(ParDo.of(new WriteWithResultsFn<>(this)));
+    }
+
+    private static class WriteWithResultsFn<T, U> extends DoFn<T, U> {
+
+      private final WriteWithResults<T, U> spec;
+      private DataSource dataSource;
+      private Connection connection;
+      private PreparedStatement preparedStatement;
+      private static FluentBackoff retryBackOff;
+
+      public WriteWithResultsFn(WriteWithResults<T, U> spec) {
+        this.spec = spec;
+      }
+
+      @Setup
+      public void setup() {
+        dataSource = spec.getDataSourceProviderFn().apply(null);
+        RetryConfiguration retryConfiguration = spec.getRetryConfiguration();
+
+        retryBackOff =
+            FluentBackoff.DEFAULT
+                .withInitialBackoff(retryConfiguration.getInitialDuration())
+                .withMaxCumulativeBackoff(retryConfiguration.getMaxDuration())
+                .withMaxRetries(retryConfiguration.getMaxAttempts());
+      }
+
+      @ProcessElement
+      public U processElement(ProcessContext context) throws Exception {
+        T record = context.element();
+
+        // Only acquire the connection if there is something to write.
+        if (connection == null) {
+          connection = dataSource.getConnection();
+          connection.setAutoCommit(false);
+          preparedStatement = connection.prepareStatement(spec.getStatement().get());
+        }
+        Sleeper sleeper = Sleeper.DEFAULT;
+        BackOff backoff = retryBackOff.backoff();
+        while (true) {
+          try (PreparedStatement preparedStatement =
+              connection.prepareStatement(spec.getStatement().get())) {
+            try {
+
+              try {
+                spec.getPreparedStatementSetter().setParameters(record, preparedStatement);
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+
+              // execute the statement
+              preparedStatement.execute();
+              // commit the changes
+              connection.commit();
+              return spec.getResultSetGetter().getResult(preparedStatement.getResultSet());
+            } catch (SQLException exception) {
+              if (!spec.getRetryStrategy().apply(exception)) {
+                throw exception;
+              }
+              LOG.warn("Deadlock detected, retrying", exception);
+              connection.rollback();
+              if (!BackOffUtils.next(sleeper, backoff)) {
+                // we tried the max number of times
+                throw exception;
+              }
+            }
+          }
+        }
+      }
+
+      @FinishBundle
+      public void finishBundle() throws Exception {
+        cleanUpStatementAndConnection();
+      }
+
+      @Override
+      protected void finalize() throws Throwable {
+        cleanUpStatementAndConnection();
+      }
+
+      private void cleanUpStatementAndConnection() throws Exception {
+        try {
+          if (preparedStatement != null) {
+            try {
+              preparedStatement.close();
+            } finally {
+              preparedStatement = null;
+            }
+          }
+        } finally {
+          if (connection != null) {
+            try {
+              connection.close();
+            } finally {
+              connection = null;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * A {@link PTransform} to write to a JDBC datasource. Executes statements in a batch, and returns
+   * a trivial result.
+   */
   @AutoValue
   public abstract static class WriteVoid<T> extends PTransform<PCollection<T>, PCollection<Void>> {
 
