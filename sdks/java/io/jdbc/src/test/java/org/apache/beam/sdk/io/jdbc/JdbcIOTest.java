@@ -372,17 +372,17 @@ public class JdbcIOTest implements Serializable {
 
       PCollection<KV<Integer, String>> dataCollection = pipeline.apply(Create.of(data));
       PCollection<TestDto> resultSetCollection =
-          dataCollection.apply(getJdbcWrite(firstTableName).withReturningResults(
-              (resultSet -> {
-                if (resultSet.next()) {
-                  return new TestDto(resultSet.getInt(1));
-                }
-                return new TestDto(TestDto.EMPTY_RESULT);
-              })
-          ));
+          dataCollection.apply(
+              getJdbcWrite(firstTableName)
+                  .withReturningResults(
+                      (resultSet -> {
+                        if (resultSet.next()) {
+                          return new TestDto(resultSet.getInt(1));
+                        }
+                        return new TestDto(TestDto.EMPTY_RESULT);
+                      })));
 
-      PAssert.that(resultSetCollection).containsInAnyOrder(
-          new TestDto(1));
+      PAssert.that(resultSetCollection).containsInAnyOrder(new TestDto(1));
       dataCollection.apply(Wait.on(resultSetCollection)).apply(getJdbcWrite(secondTableName));
 
       pipeline.run();
