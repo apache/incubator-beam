@@ -107,7 +107,7 @@ public class TestPipeline extends Pipeline implements TestRule {
 
   private final PipelineOptions options;
 
-  private static class PipelineRunEnforcement {
+  protected static class PipelineRunEnforcement {
 
     @SuppressWarnings("WeakerAccess")
     protected boolean enableAutoRunIfMissing;
@@ -137,7 +137,7 @@ public class TestPipeline extends Pipeline implements TestRule {
     }
   }
 
-  private static class PipelineAbandonedNodeEnforcement extends PipelineRunEnforcement {
+  protected static class PipelineAbandonedNodeEnforcement extends PipelineRunEnforcement {
 
     // Null until the pipeline has been run
     private @Nullable List<TransformHierarchy.Node> runVisitedNodes;
@@ -247,12 +247,12 @@ public class TestPipeline extends Pipeline implements TestRule {
 
   static final String PROPERTY_USE_DEFAULT_DUMMY_RUNNER = "beamUseDummyRunner";
 
-  private static final ObjectMapper MAPPER =
+  protected static final ObjectMapper MAPPER =
       new ObjectMapper()
           .registerModules(ObjectMapper.findModules(ReflectHelpers.findClassLoader()));
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-  private Optional<? extends PipelineRunEnforcement> enforcement = Optional.absent();
+  protected Optional<? extends PipelineRunEnforcement> enforcement = Optional.absent();
 
   /**
    * Creates and returns a new test pipeline.
@@ -268,7 +268,7 @@ public class TestPipeline extends Pipeline implements TestRule {
     return new TestPipeline(options);
   }
 
-  private TestPipeline(final PipelineOptions options) {
+  protected TestPipeline(final PipelineOptions options) {
     super(options);
     this.options = options;
   }
@@ -458,7 +458,7 @@ public class TestPipeline extends Pipeline implements TestRule {
    *   <li>Addition of PTransforms after the pipeline has already run.
    * </ul>
    *
-   * Abandoned node detection is automatically enabled when a real pipeline runner (i.e. not a
+   * <p>Abandoned node detection is automatically enabled when a real pipeline runner (i.e. not a
    * {@link CrashingRunner}) and/or a {@link NeedsRunner} or a {@link ValidatesRunner} annotation
    * are detected.
    */
