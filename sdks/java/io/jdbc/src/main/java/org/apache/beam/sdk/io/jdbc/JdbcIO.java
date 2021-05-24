@@ -1234,6 +1234,7 @@ public class JdbcIO {
         throws SQLException;
   }
 
+  @AutoValue
   public abstract static class WriteWithResults<T, U>
       extends PTransform<PCollection<T>, PCollection<U>> {
     abstract @Nullable SerializableFunction<Void, DataSource> getDataSourceProviderFn();
