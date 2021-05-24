@@ -403,7 +403,7 @@ public class JdbcIOTest implements Serializable {
               getJdbcWrite(firstTableName)
                   .withReturningResults(
                       (resultSet -> {
-                        if (resultSet.next()) {
+                        if (resultSet != null && resultSet.next()) {
                           return new TestDto(resultSet.getInt(1));
                         }
                         return new TestDto(TestDto.EMPTY_RESULT);
