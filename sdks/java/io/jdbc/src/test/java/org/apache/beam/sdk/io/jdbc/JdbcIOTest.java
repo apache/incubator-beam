@@ -32,6 +32,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -54,6 +57,10 @@ import java.util.TimeZone;
 import java.util.logging.LogRecord;
 import javax.sql.DataSource;
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
+import org.apache.beam.sdk.coders.BigEndianIntegerCoder;
+import org.apache.beam.sdk.coders.Coder;
+import org.apache.beam.sdk.coders.CoderException;
+import org.apache.beam.sdk.coders.CustomCoder;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
@@ -103,7 +110,7 @@ public class JdbcIOTest implements Serializable {
   private static final int EXPECTED_ROW_COUNT = 1000;
   private static final String READ_TABLE_NAME = DatabaseTestHelper.getTestTableName("UT_READ");
 
-  private static class TestDto {
+  private static class TestDto implements Serializable {
 
     public static final int EMPTY_RESULT = 0;
 
@@ -113,6 +120,26 @@ public class JdbcIOTest implements Serializable {
       this.rowsUpdated = rowsUpdated;
     }
   }
+
+  public static final Coder<TestDto> TEST_DTO_CODER =
+      new CustomCoder<TestDto>() {
+        @Override
+        public void encode(TestDto value, OutputStream outStream)
+            throws CoderException, IOException {
+          BigEndianIntegerCoder.of().encode(value.rowsUpdated, outStream);
+        }
+
+        @Override
+        public TestDto decode(InputStream inStream) throws CoderException, IOException {
+          int rowsUpdated = BigEndianIntegerCoder.of().decode(inStream);
+          return new TestDto(rowsUpdated);
+        }
+
+        @Override
+        public Object structuralValue(TestDto v) {
+          return v;
+        }
+      };
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
 
@@ -362,7 +389,7 @@ public class JdbcIOTest implements Serializable {
   }
 
   @Test
-  public void testWriteWithReturningResultsAndWaitOn() throws Exception {
+  public void testWriteWithReturningResults() throws Exception {
     String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
     String secondTableName = DatabaseTestHelper.getTestTableName("UT_WRITE_AFTER_WAIT");
     DatabaseTestHelper.createTable(DATA_SOURCE, firstTableName);
@@ -381,9 +408,9 @@ public class JdbcIOTest implements Serializable {
                         }
                         return new TestDto(TestDto.EMPTY_RESULT);
                       })));
+      resultSetCollection.setCoder(TEST_DTO_CODER);
 
       PAssert.that(resultSetCollection).containsInAnyOrder(new TestDto(1));
-      dataCollection.apply(Wait.on(resultSetCollection)).apply(getJdbcWrite(secondTableName));
 
       pipeline.run();
 
