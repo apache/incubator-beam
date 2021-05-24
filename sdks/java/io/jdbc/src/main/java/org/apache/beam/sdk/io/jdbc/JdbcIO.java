@@ -1084,8 +1084,8 @@ public class JdbcIO {
       return inner;
     }
 
-    public <U> WriteWithResults<T, U> withReturningResults(ResultSetToResult<U> resultSetToResult) {
-      return new AutoValue_JdbcIO_WriteWithResults.Builder<T, U>()
+    public <V> WriteWithResults<T, V> withReturningResults(ResultSetToResult<V> resultSetToResult) {
+      return new AutoValue_JdbcIO_WriteWithResults.Builder<T, V>()
           .setResultSetToResult(resultSetToResult)
           .setRetryStrategy(inner.getRetryStrategy())
           .setRetryConfiguration(inner.getRetryConfiguration())
