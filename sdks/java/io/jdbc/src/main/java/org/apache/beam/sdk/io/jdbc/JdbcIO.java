@@ -1026,43 +1026,43 @@ public class JdbcIO {
 
     /** See {@link WriteVoid#withDataSourceConfiguration(DataSourceConfiguration)}. */
     public Write<T> withDataSourceConfiguration(DataSourceConfiguration config) {
-      return new Write(inner.withDataSourceConfiguration(config));
+      return new Write<>(inner.withDataSourceConfiguration(config));
     }
 
     /** See {@link WriteVoid#withDataSourceProviderFn(SerializableFunction)}. */
     public Write<T> withDataSourceProviderFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn) {
-      return new Write(inner.withDataSourceProviderFn(dataSourceProviderFn));
+      return new Write<>(inner.withDataSourceProviderFn(dataSourceProviderFn));
     }
 
     /** See {@link WriteVoid#withStatement(String)}. */
     public Write<T> withStatement(String statement) {
-      return new Write(inner.withStatement(statement));
+      return new Write<>(inner.withStatement(statement));
     }
 
     /** See {@link WriteVoid#withPreparedStatementSetter(PreparedStatementSetter)}. */
     public Write<T> withPreparedStatementSetter(PreparedStatementSetter<T> setter) {
-      return new Write(inner.withPreparedStatementSetter(setter));
+      return new Write<>(inner.withPreparedStatementSetter(setter));
     }
 
     /** See {@link WriteVoid#withBatchSize(long)}. */
     public Write<T> withBatchSize(long batchSize) {
-      return new Write(inner.withBatchSize(batchSize));
+      return new Write<>(inner.withBatchSize(batchSize));
     }
 
     /** See {@link WriteVoid#withRetryStrategy(RetryStrategy)}. */
     public Write<T> withRetryStrategy(RetryStrategy retryStrategy) {
-      return new Write(inner.withRetryStrategy(retryStrategy));
+      return new Write<>(inner.withRetryStrategy(retryStrategy));
     }
 
     /** See {@link WriteVoid#withRetryConfiguration(RetryConfiguration)}. */
     public Write<T> withRetryConfiguration(RetryConfiguration retryConfiguration) {
-      return new Write(inner.withRetryConfiguration(retryConfiguration));
+      return new Write<>(inner.withRetryConfiguration(retryConfiguration));
     }
 
     /** See {@link WriteVoid#withTable(String)}. */
     public Write<T> withTable(String table) {
-      return new Write(inner.withTable(table));
+      return new Write<>(inner.withTable(table));
     }
 
     /**
@@ -1087,8 +1087,12 @@ public class JdbcIO {
     public <U> WriteWithResults<T, U> withReturningResults(ResultSetGetter<U> resultSetGetter) {
       return new AutoValue_JdbcIO_WriteWithResults.Builder<T, U>()
           .setResultSetGetter(resultSetGetter)
-          .setRetryStrategy(new DefaultRetryStrategy())
-          .setRetryConfiguration(RetryConfiguration.create(5, null, Duration.standardSeconds(5)))
+          .setRetryStrategy(inner.getRetryStrategy())
+          .setRetryConfiguration(inner.getRetryConfiguration())
+          .setDataSourceProviderFn(inner.getDataSourceProviderFn())
+          .setPreparedStatementSetter(inner.getPreparedStatementSetter())
+          .setStatement(inner.getStatement())
+          .setTable(inner.getTable())
           .build();
     }
 
