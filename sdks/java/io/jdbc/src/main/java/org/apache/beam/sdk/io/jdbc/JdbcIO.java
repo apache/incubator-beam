@@ -1243,8 +1243,8 @@ public class JdbcIO {
    * return a specific result.
    */
   @AutoValue
-  public abstract static class WriteWithResults<T, U>
-      extends PTransform<PCollection<T>, PCollection<U>> {
+  public abstract static class WriteWithResults<T, V>
+      extends PTransform<PCollection<T>, PCollection<V>> {
     abstract @Nullable SerializableFunction<Void, DataSource> getDataSourceProviderFn();
 
     abstract @Nullable ValueProvider<String> getStatement();
@@ -1257,48 +1257,48 @@ public class JdbcIO {
 
     abstract @Nullable String getTable();
 
-    abstract @Nullable ResultSetToResult<U> getResultSetToResult();
+    abstract @Nullable ResultSetToResult<V> getResultSetToResult();
 
-    abstract Builder<T, U> toBuilder();
+    abstract Builder<T, V> toBuilder();
 
     @AutoValue.Builder
-    abstract static class Builder<T, U> {
-      abstract Builder<T, U> setDataSourceProviderFn(
+    abstract static class Builder<T, V> {
+      abstract Builder<T, V> setDataSourceProviderFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn);
 
-      abstract Builder<T, U> setStatement(ValueProvider<String> statement);
+      abstract Builder<T, V> setStatement(ValueProvider<String> statement);
 
-      abstract Builder<T, U> setPreparedStatementSetter(PreparedStatementSetter<T> setter);
+      abstract Builder<T, V> setPreparedStatementSetter(PreparedStatementSetter<T> setter);
 
-      abstract Builder<T, U> setRetryStrategy(RetryStrategy deadlockPredicate);
+      abstract Builder<T, V> setRetryStrategy(RetryStrategy deadlockPredicate);
 
-      abstract Builder<T, U> setRetryConfiguration(RetryConfiguration retryConfiguration);
+      abstract Builder<T, V> setRetryConfiguration(RetryConfiguration retryConfiguration);
 
-      abstract Builder<T, U> setTable(String table);
+      abstract Builder<T, V> setTable(String table);
 
-      abstract Builder<T, U> setResultSetToResult(ResultSetToResult<U> resultSetToResult);
+      abstract Builder<T, V> setResultSetToResult(ResultSetToResult<V> resultSetToResult);
 
-      abstract WriteWithResults<T, U> build();
+      abstract WriteWithResults<T, V> build();
     }
 
-    public WriteWithResults<T, U> withDataSourceConfiguration(DataSourceConfiguration config) {
+    public WriteWithResults<T, V> withDataSourceConfiguration(DataSourceConfiguration config) {
       return withDataSourceProviderFn(new DataSourceProviderFromDataSourceConfiguration(config));
     }
 
-    public WriteWithResults<T, U> withDataSourceProviderFn(
+    public WriteWithResults<T, V> withDataSourceProviderFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn) {
       return toBuilder().setDataSourceProviderFn(dataSourceProviderFn).build();
     }
 
-    public WriteWithResults<T, U> withStatement(String statement) {
+    public WriteWithResults<T, V> withStatement(String statement) {
       return withStatement(ValueProvider.StaticValueProvider.of(statement));
     }
 
-    public WriteWithResults<T, U> withStatement(ValueProvider<String> statement) {
+    public WriteWithResults<T, V> withStatement(ValueProvider<String> statement) {
       return toBuilder().setStatement(statement).build();
     }
 
-    public WriteWithResults<T, U> withPreparedStatementSetter(PreparedStatementSetter<T> setter) {
+    public WriteWithResults<T, V> withPreparedStatementSetter(PreparedStatementSetter<T> setter) {
       return toBuilder().setPreparedStatementSetter(setter).build();
     }
 
@@ -1307,7 +1307,7 @@ public class JdbcIO {
      * will retry the statements. If {@link RetryStrategy#apply(SQLException)} returns {@code true},
      * then {@link Write} retries the statements.
      */
-    public WriteWithResults<T, U> withRetryStrategy(RetryStrategy retryStrategy) {
+    public WriteWithResults<T, V> withRetryStrategy(RetryStrategy retryStrategy) {
       checkArgument(retryStrategy != null, "retryStrategy can not be null");
       return toBuilder().setRetryStrategy(retryStrategy).build();
     }
@@ -1341,23 +1341,23 @@ public class JdbcIO {
      *
      * }</pre>
      */
-    public WriteWithResults<T, U> withRetryConfiguration(RetryConfiguration retryConfiguration) {
+    public WriteWithResults<T, V> withRetryConfiguration(RetryConfiguration retryConfiguration) {
       checkArgument(retryConfiguration != null, "retryConfiguration can not be null");
       return toBuilder().setRetryConfiguration(retryConfiguration).build();
     }
 
-    public WriteWithResults<T, U> withTable(String table) {
+    public WriteWithResults<T, V> withTable(String table) {
       checkArgument(table != null, "table name can not be null");
       return toBuilder().setTable(table).build();
     }
 
-    public WriteWithResults<T, U> withResultSetToResult(ResultSetToResult<U> resultSetToResult) {
+    public WriteWithResults<T, V> withResultSetToResult(ResultSetToResult<V> resultSetToResult) {
       checkArgument(resultSetToResult != null, "result set getter can not be null");
       return toBuilder().setResultSetToResult(resultSetToResult).build();
     }
 
     @Override
-    public PCollection<U> expand(PCollection<T> input) {
+    public PCollection<V> expand(PCollection<T> input) {
       checkArgument(getStatement() != null, "withStatement() is required");
       checkArgument(
           getPreparedStatementSetter() != null, "withPreparedStatementSetter() is required");
@@ -1368,15 +1368,15 @@ public class JdbcIO {
       return input.apply(ParDo.of(new WriteWithResultsFn<>(this)));
     }
 
-    private static class WriteWithResultsFn<T, U> extends DoFn<T, U> {
+    private static class WriteWithResultsFn<T, V> extends DoFn<T, V> {
 
-      private final WriteWithResults<T, U> spec;
+      private final WriteWithResults<T, V> spec;
       private DataSource dataSource;
       private Connection connection;
       private PreparedStatement preparedStatement;
       private static FluentBackoff retryBackOff;
 
-      public WriteWithResultsFn(WriteWithResults<T, U> spec) {
+      public WriteWithResultsFn(WriteWithResults<T, V> spec) {
         this.spec = spec;
       }
 
