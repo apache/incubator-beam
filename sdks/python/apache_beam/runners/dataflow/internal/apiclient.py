@@ -1112,20 +1112,17 @@ def get_container_image_from_options(pipeline_options):
     return worker_options.sdk_container_image
 
   use_fnapi = _use_fnapi(pipeline_options)
-  # TODO(tvalentyn): Use enumerated type instead of strings for job types.
+
+  repo = names.DATAFLOW_CONTAINER_IMAGE_REPOSITORY
+  version = '%s%s' % (sys.version_info[0:2])
+  tag = _get_required_container_version(use_fnapi)
+
+  # Use GCR SDK harness for FnAPI pipelines
   if use_fnapi:
-    fnapi_suffix = '-fnapi'
-  else:
-    fnapi_suffix = ''
+    return f'{repository}/beam_python{version}_sdk:{tag}'
 
-  version_suffix = '%s%s' % (sys.version_info[0:2])
-  image_name = '{repository}/python{version_suffix}{fnapi_suffix}'.format(
-      repository=names.DATAFLOW_CONTAINER_IMAGE_REPOSITORY,
-      version_suffix=version_suffix,
-      fnapi_suffix=fnapi_suffix)
-
-  image_tag = _get_required_container_version(use_fnapi)
-  return image_name + ':' + image_tag
+  # Legacy worker URL
+  return f'{repository}/python{version}_sdk:{tag}'
 
 
 def _get_required_container_version(use_fnapi):
