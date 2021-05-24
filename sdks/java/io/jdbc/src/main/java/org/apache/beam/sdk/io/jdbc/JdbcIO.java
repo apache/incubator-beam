@@ -1250,46 +1250,46 @@ public class JdbcIO {
 
     abstract @Nullable ResultSetGetter<U> getResultSetGetter();
 
-    abstract WriteVoid.Builder<T> toBuilder();
+    abstract Builder<T, U> toBuilder();
 
     @AutoValue.Builder
-    abstract static class Builder<T> {
-      abstract WriteVoid.Builder<T> setDataSourceProviderFn(
+    abstract static class Builder<T, U> {
+      abstract Builder<T, U> setDataSourceProviderFn(
           SerializableFunction<Void, DataSource> dataSourceProviderFn);
 
-      abstract WriteVoid.Builder<T> setStatement(ValueProvider<String> statement);
+      abstract Builder<T, U> setStatement(ValueProvider<String> statement);
 
-      abstract WriteVoid.Builder<T> setPreparedStatementSetter(PreparedStatementSetter<T> setter);
+      abstract Builder<T, U> setPreparedStatementSetter(PreparedStatementSetter<T> setter);
 
-      abstract WriteVoid.Builder<T> setRetryStrategy(RetryStrategy deadlockPredicate);
+      abstract Builder<T, U> setRetryStrategy(RetryStrategy deadlockPredicate);
 
-      abstract WriteVoid.Builder<T> setRetryConfiguration(RetryConfiguration retryConfiguration);
+      abstract Builder<T, U> setRetryConfiguration(RetryConfiguration retryConfiguration);
 
-      abstract WriteVoid.Builder<T> setTable(String table);
+      abstract Builder<T, U> setTable(String table);
 
-      abstract WriteVoid.Builder<T> setResultSetGetter(ResultSetGetter resultSetGetter);
+      abstract Builder<T, U> setResultSetGetter(ResultSetGetter<U> resultSetGetter);
 
-      abstract WriteVoid<T> build();
+      abstract WriteWithResults<T, U> build();
     }
 
-    public WriteVoid<T> withDataSourceConfiguration(DataSourceConfiguration config) {
+    public WriteWithResults<T, U> withDataSourceConfiguration(DataSourceConfiguration config) {
       return withDataSourceProviderFn(new DataSourceProviderFromDataSourceConfiguration(config));
     }
 
-    public WriteVoid<T> withDataSourceProviderFn(
+    public WriteWithResults<T, U> withDataSourceProviderFn(
         SerializableFunction<Void, DataSource> dataSourceProviderFn) {
       return toBuilder().setDataSourceProviderFn(dataSourceProviderFn).build();
     }
 
-    public WriteVoid<T> withStatement(String statement) {
+    public WriteWithResults<T, U> withStatement(String statement) {
       return withStatement(ValueProvider.StaticValueProvider.of(statement));
     }
 
-    public WriteVoid<T> withStatement(ValueProvider<String> statement) {
+    public WriteWithResults<T, U> withStatement(ValueProvider<String> statement) {
       return toBuilder().setStatement(statement).build();
     }
 
-    public WriteVoid<T> withPreparedStatementSetter(PreparedStatementSetter<T> setter) {
+    public WriteWithResults<T, U> withPreparedStatementSetter(PreparedStatementSetter<T> setter) {
       return toBuilder().setPreparedStatementSetter(setter).build();
     }
 
@@ -1298,7 +1298,7 @@ public class JdbcIO {
      * will retry the statements. If {@link RetryStrategy#apply(SQLException)} returns {@code true},
      * then {@link Write} retries the statements.
      */
-    public WriteVoid<T> withRetryStrategy(RetryStrategy retryStrategy) {
+    public WriteWithResults<T, U> withRetryStrategy(RetryStrategy retryStrategy) {
       checkArgument(retryStrategy != null, "retryStrategy can not be null");
       return toBuilder().setRetryStrategy(retryStrategy).build();
     }
@@ -1330,14 +1330,19 @@ public class JdbcIO {
      *
      * }</pre>
      */
-    public WriteVoid<T> withRetryConfiguration(RetryConfiguration retryConfiguration) {
+    public WriteWithResults<T, U> withRetryConfiguration(RetryConfiguration retryConfiguration) {
       checkArgument(retryConfiguration != null, "retryConfiguration can not be null");
       return toBuilder().setRetryConfiguration(retryConfiguration).build();
     }
 
-    public WriteVoid<T> withTable(String table) {
+    public WriteWithResults<T, U> withTable(String table) {
       checkArgument(table != null, "table name can not be null");
       return toBuilder().setTable(table).build();
+    }
+
+    public WriteWithResults<T, U> withResultSetGetter(ResultSetGetter<U> resultSetGetter) {
+      checkArgument(resultSetGetter != null, "result set getter can not be null");
+      return toBuilder().setResultSetGetter(resultSetGetter).build();
     }
 
     @Override
