@@ -994,7 +994,7 @@ public class JdbcIO {
   }
 
   @FunctionalInterface
-  public interface ResultSetGetter<T> extends Serializable {
+  public interface ResultSetToResult<T> extends Serializable {
     T getResult(ResultSet resultSet) throws Exception;
   }
 
@@ -1084,9 +1084,9 @@ public class JdbcIO {
       return inner;
     }
 
-    public <U> WriteWithResults<T, U> withReturningResults(ResultSetGetter<U> resultSetGetter) {
+    public <U> WriteWithResults<T, U> withReturningResults(ResultSetToResult<U> resultSetToResult) {
       return new AutoValue_JdbcIO_WriteWithResults.Builder<T, U>()
-          .setResultSetGetter(resultSetGetter)
+          .setResultSetToResult(resultSetToResult)
           .setRetryStrategy(inner.getRetryStrategy())
           .setRetryConfiguration(inner.getRetryConfiguration())
           .setDataSourceProviderFn(inner.getDataSourceProviderFn())
@@ -1238,6 +1238,10 @@ public class JdbcIO {
         throws SQLException;
   }
 
+  /**
+   * A {@link PTransform} to write to a JDBC datasource. Executes statements one by one, and could
+   * return a specific result.
+   */
   @AutoValue
   public abstract static class WriteWithResults<T, U>
       extends PTransform<PCollection<T>, PCollection<U>> {
@@ -1253,7 +1257,7 @@ public class JdbcIO {
 
     abstract @Nullable String getTable();
 
-    abstract @Nullable ResultSetGetter<U> getResultSetGetter();
+    abstract @Nullable ResultSetToResult<U> getResultSetToResult();
 
     abstract Builder<T, U> toBuilder();
 
@@ -1272,7 +1276,7 @@ public class JdbcIO {
 
       abstract Builder<T, U> setTable(String table);
 
-      abstract Builder<T, U> setResultSetGetter(ResultSetGetter<U> resultSetGetter);
+      abstract Builder<T, U> setResultSetToResult(ResultSetToResult<U> resultSetToResult);
 
       abstract WriteWithResults<T, U> build();
     }
@@ -1317,6 +1321,7 @@ public class JdbcIO {
      *
      * <pre>{@code
      * pipeline.apply(JdbcIO.<T>write())
+     *    .withReturningResults(...)
      *    .withDataSourceConfiguration(...)
      *    .withRetryStrategy(...)
      *    .withRetryConfiguration(JdbcIO.RetryConfiguration.
@@ -1328,6 +1333,7 @@ public class JdbcIO {
      *
      * <pre>{@code
      * pipeline.apply(JdbcIO.<T>write())
+     *    .withReturningResults(...)
      *    .withDataSourceConfiguration(...)
      *    .withRetryStrategy(...)
      *    .withRetryConfiguration(JdbcIO.RetryConfiguration.
@@ -1345,9 +1351,9 @@ public class JdbcIO {
       return toBuilder().setTable(table).build();
     }
 
-    public WriteWithResults<T, U> withResultSetGetter(ResultSetGetter<U> resultSetGetter) {
-      checkArgument(resultSetGetter != null, "result set getter can not be null");
-      return toBuilder().setResultSetGetter(resultSetGetter).build();
+    public WriteWithResults<T, U> withResultSetToResult(ResultSetToResult<U> resultSetToResult) {
+      checkArgument(resultSetToResult != null, "result set getter can not be null");
+      return toBuilder().setResultSetToResult(resultSetToResult).build();
     }
 
     @Override
@@ -1413,7 +1419,8 @@ public class JdbcIO {
               preparedStatement.execute();
               // commit the changes
               connection.commit();
-              context.output(spec.getResultSetGetter().getResult(preparedStatement.getResultSet()));
+              context.output(
+                  spec.getResultSetToResult().getResult(preparedStatement.getResultSet()));
               return;
             } catch (SQLException exception) {
               if (!spec.getRetryStrategy().apply(exception)) {

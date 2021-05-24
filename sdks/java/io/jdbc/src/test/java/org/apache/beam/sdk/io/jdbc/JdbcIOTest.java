@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.logging.LogRecord;
 import javax.sql.DataSource;
@@ -114,10 +115,27 @@ public class JdbcIOTest implements Serializable {
 
     public static final int EMPTY_RESULT = 0;
 
-    private int rowsUpdated;
+    private int simpleField;
 
-    public TestDto(int rowsUpdated) {
-      this.rowsUpdated = rowsUpdated;
+    public TestDto(int simpleField) {
+      this.simpleField = simpleField;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      TestDto testDto = (TestDto) o;
+      return simpleField == testDto.simpleField;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(simpleField);
     }
   }
 
@@ -126,7 +144,7 @@ public class JdbcIOTest implements Serializable {
         @Override
         public void encode(TestDto value, OutputStream outStream)
             throws CoderException, IOException {
-          BigEndianIntegerCoder.of().encode(value.rowsUpdated, outStream);
+          BigEndianIntegerCoder.of().encode(value.simpleField, outStream);
         }
 
         @Override
@@ -410,7 +428,7 @@ public class JdbcIOTest implements Serializable {
                       })));
       resultSetCollection.setCoder(TEST_DTO_CODER);
 
-      PAssert.that(resultSetCollection).containsInAnyOrder(new TestDto(1));
+      PAssert.that(resultSetCollection).containsInAnyOrder(new TestDto(TestDto.EMPTY_RESULT));
 
       pipeline.run();
 
