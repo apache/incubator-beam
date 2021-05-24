@@ -1387,7 +1387,7 @@ public class JdbcIO {
       }
 
       @ProcessElement
-      public U processElement(ProcessContext context) throws Exception {
+      public void processElement(ProcessContext context) throws Exception {
         T record = context.element();
 
         // Only acquire the connection if there is something to write.
@@ -1413,7 +1413,8 @@ public class JdbcIO {
               preparedStatement.execute();
               // commit the changes
               connection.commit();
-              return spec.getResultSetGetter().getResult(preparedStatement.getResultSet());
+              context.output(spec.getResultSetGetter().getResult(preparedStatement.getResultSet()));
+              return;
             } catch (SQLException exception) {
               if (!spec.getRetryStrategy().apply(exception)) {
                 throw exception;
