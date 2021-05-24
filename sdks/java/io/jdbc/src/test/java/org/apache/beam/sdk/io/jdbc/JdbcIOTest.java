@@ -149,8 +149,8 @@ public class JdbcIOTest implements Serializable {
 
         @Override
         public TestDto decode(InputStream inStream) throws CoderException, IOException {
-          int rowsUpdated = BigEndianIntegerCoder.of().decode(inStream);
-          return new TestDto(rowsUpdated);
+          int simpleField = BigEndianIntegerCoder.of().decode(inStream);
+          return new TestDto(simpleField);
         }
 
         @Override
@@ -428,12 +428,16 @@ public class JdbcIOTest implements Serializable {
                       })));
       resultSetCollection.setCoder(TEST_DTO_CODER);
 
-      PAssert.that(resultSetCollection).containsInAnyOrder(new TestDto(TestDto.EMPTY_RESULT));
+      List<TestDto> expectedResult = new ArrayList<>();
+      for (int i = 0; i < EXPECTED_ROW_COUNT; i++) {
+        expectedResult.add(new TestDto(TestDto.EMPTY_RESULT));
+      }
+
+      PAssert.that(resultSetCollection).containsInAnyOrder(expectedResult);
 
       pipeline.run();
 
       assertRowCount(firstTableName, EXPECTED_ROW_COUNT);
-      assertRowCount(secondTableName, EXPECTED_ROW_COUNT);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, firstTableName);
     }
