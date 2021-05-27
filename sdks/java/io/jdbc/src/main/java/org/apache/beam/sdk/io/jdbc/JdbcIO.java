@@ -1129,6 +1129,9 @@ public class JdbcIO {
       return PDone.in(input.getPipeline());
     }
 
+    @SuppressFBWarnings(
+        value = "OBL_UNSATISFIED_OBLIGATION",
+        justification = "https://github.com/spotbugs/spotbugs/issues/293")
     private List<SchemaUtil.FieldWithIndex> getFilteredFields(Schema schema) {
       Schema tableSchema;
 
