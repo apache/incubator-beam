@@ -993,11 +993,6 @@ public class JdbcIO {
     void setParameters(T element, PreparedStatement preparedStatement) throws Exception;
   }
 
-  @FunctionalInterface
-  public interface ResultSetToResult<T> extends Serializable {
-    T getResult(ResultSet resultSet) throws Exception;
-  }
-
   /**
    * An interface used to control if we retry the statements when a {@link SQLException} occurs. If
    * {@link RetryStrategy#apply(SQLException)} returns true, {@link Write} tries to replay the
@@ -1084,9 +1079,14 @@ public class JdbcIO {
       return inner;
     }
 
-    public <V> WriteWithResults<T, V> withReturningResults(ResultSetToResult<V> resultSetToResult) {
+    /**
+     * Returns {@link WriteWithResults} transform that could return a specific result.
+     *
+     * <p>See {@link WriteWithResults}
+     */
+    public <V> WriteWithResults<T, V> withReturningResults(RowMapper<V> rowMapper) {
       return new AutoValue_JdbcIO_WriteWithResults.Builder<T, V>()
-          .setResultSetToResult(resultSetToResult)
+          .setRowMapper(rowMapper)
           .setRetryStrategy(inner.getRetryStrategy())
           .setRetryConfiguration(inner.getRetryConfiguration())
           .setDataSourceProviderFn(inner.getDataSourceProviderFn())
@@ -1129,9 +1129,6 @@ public class JdbcIO {
       return PDone.in(input.getPipeline());
     }
 
-    @SuppressFBWarnings(
-        value = "OBL_UNSATISFIED_OBLIGATION",
-        justification = "https://github.com/spotbugs/spotbugs/issues/293")
     private List<SchemaUtil.FieldWithIndex> getFilteredFields(Schema schema) {
       Schema tableSchema;
 
@@ -1139,6 +1136,7 @@ public class JdbcIO {
           PreparedStatement statement =
               connection.prepareStatement((String.format("SELECT * FROM %s", inner.getTable())))) {
         tableSchema = SchemaUtil.toBeamSchema(statement.getMetaData());
+        statement.close();
       } catch (SQLException e) {
         throw new RuntimeException(
             "Error while determining columns from table: " + inner.getTable(), e);
@@ -1242,8 +1240,12 @@ public class JdbcIO {
   }
 
   /**
-   * A {@link PTransform} to write to a JDBC datasource. Executes statements one by one, and could
-   * return a specific result.
+   * A {@link PTransform} to write to a JDBC datasource. Executes statements one by one.
+   *
+   * <p>The INSERT, UPDATE, and DELETE commands sometimes have an optional RETURNING clause that
+   * supports obtaining data from modified rows while they are being manipulated. Output {@link
+   * PCollection} of this transform is a collection of such returning results mapped by {@link
+   * RowMapper}.
    */
   @AutoValue
   public abstract static class WriteWithResults<T, V>
@@ -1260,7 +1262,7 @@ public class JdbcIO {
 
     abstract @Nullable String getTable();
 
-    abstract @Nullable ResultSetToResult<V> getResultSetToResult();
+    abstract @Nullable RowMapper<V> getRowMapper();
 
     abstract Builder<T, V> toBuilder();
 
@@ -1279,7 +1281,7 @@ public class JdbcIO {
 
       abstract Builder<T, V> setTable(String table);
 
-      abstract Builder<T, V> setResultSetToResult(ResultSetToResult<V> resultSetToResult);
+      abstract Builder<T, V> setRowMapper(RowMapper<V> rowMapper);
 
       abstract WriteWithResults<T, V> build();
     }
@@ -1354,9 +1356,9 @@ public class JdbcIO {
       return toBuilder().setTable(table).build();
     }
 
-    public WriteWithResults<T, V> withResultSetToResult(ResultSetToResult<V> resultSetToResult) {
-      checkArgument(resultSetToResult != null, "result set getter can not be null");
-      return toBuilder().setResultSetToResult(resultSetToResult).build();
+    public WriteWithResults<T, V> withRowMapper(RowMapper<V> rowMapper) {
+      checkArgument(rowMapper != null, "result set getter can not be null");
+      return toBuilder().setRowMapper(rowMapper).build();
     }
 
     @Override
@@ -1422,8 +1424,7 @@ public class JdbcIO {
               preparedStatement.execute();
               // commit the changes
               connection.commit();
-              context.output(
-                  spec.getResultSetToResult().getResult(preparedStatement.getResultSet()));
+              context.output(spec.getRowMapper().mapRow(preparedStatement.getResultSet()));
               return;
             } catch (SQLException exception) {
               if (!spec.getRetryStrategy().apply(exception)) {
