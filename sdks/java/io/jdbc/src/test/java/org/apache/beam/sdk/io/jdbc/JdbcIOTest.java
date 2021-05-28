@@ -17,6 +17,7 @@
  */
 package org.apache.beam.sdk.io.jdbc;
 
+import static org.apache.beam.sdk.io.common.IOITHelper.readIOTestPipelineOptions;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
@@ -67,6 +68,7 @@ import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.io.common.DatabaseTestHelper;
+import org.apache.beam.sdk.io.common.PostgresIOTestPipelineOptions;
 import org.apache.beam.sdk.io.common.TestRow;
 import org.apache.beam.sdk.io.jdbc.JdbcIO.DataSourceConfiguration;
 import org.apache.beam.sdk.io.jdbc.JdbcIO.PoolableDataSourceProvider;
@@ -97,6 +99,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,6 +113,8 @@ public class JdbcIOTest implements Serializable {
   private static final DataSource DATA_SOURCE = DATA_SOURCE_CONFIGURATION.buildDatasource();
   private static final int EXPECTED_ROW_COUNT = 1000;
   private static final String READ_TABLE_NAME = DatabaseTestHelper.getTestTableName("UT_READ");
+
+  private static PGSimpleDataSource pgDataSource;
 
   private static class TestDto implements Serializable {
 
@@ -174,6 +179,13 @@ public class JdbcIOTest implements Serializable {
 
     DatabaseTestHelper.createTable(DATA_SOURCE, READ_TABLE_NAME);
     addInitialData(DATA_SOURCE, READ_TABLE_NAME);
+
+    // Postgres
+    PostgresIOTestPipelineOptions pgOptions =
+        readIOTestPipelineOptions(PostgresIOTestPipelineOptions.class);
+    pgDataSource = DatabaseTestHelper.getPostgresDataSource(pgOptions);
+    DatabaseTestHelper.createTable(pgDataSource, READ_TABLE_NAME);
+    addInitialData(pgDataSource, READ_TABLE_NAME);
   }
 
   @Test
@@ -407,7 +419,7 @@ public class JdbcIOTest implements Serializable {
   }
 
   @Test
-  public void testWriteWithReturningResults() throws Exception {
+  public void testWriteWithNoReturningResults() throws Exception {
     String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
     String secondTableName = DatabaseTestHelper.getTestTableName("UT_WRITE_AFTER_WAIT");
     DatabaseTestHelper.createTable(DATA_SOURCE, firstTableName);
@@ -444,6 +456,43 @@ public class JdbcIOTest implements Serializable {
   }
 
   @Test
+  public void testWriteWithReturningResults() throws Exception {
+    String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
+    String secondTableName = DatabaseTestHelper.getTestTableName("UT_WRITE_AFTER_WAIT");
+    DatabaseTestHelper.createTable(DATA_SOURCE, firstTableName);
+    DatabaseTestHelper.createTable(DATA_SOURCE, secondTableName);
+    try {
+      ArrayList<KV<Integer, String>> data = getDataToWrite(EXPECTED_ROW_COUNT);
+
+      PCollection<KV<Integer, String>> dataCollection = pipeline.apply(Create.of(data));
+      PCollection<TestDto> resultSetCollection =
+          dataCollection.apply(
+              getJdbcWriteWithReturning(firstTableName)
+                  .withReturningResults(
+                      (resultSet -> {
+                        if (resultSet != null && resultSet.next()) {
+                          return new TestDto(resultSet.getInt(1));
+                        }
+                        return new TestDto(TestDto.EMPTY_RESULT);
+                      })));
+      resultSetCollection.setCoder(TEST_DTO_CODER);
+
+      List<TestDto> expectedResult = new ArrayList<>();
+      for (int id = 0; id < EXPECTED_ROW_COUNT; id++) {
+        expectedResult.add(new TestDto(id));
+      }
+
+      PAssert.that(resultSetCollection).containsInAnyOrder(expectedResult);
+
+      pipeline.run();
+
+      assertRowCount(firstTableName, EXPECTED_ROW_COUNT);
+    } finally {
+      DatabaseTestHelper.deleteTable(DATA_SOURCE, firstTableName);
+    }
+  }
+
+  @Test
   public void testWriteWithVoidResultsAndWaitOn() throws Exception {
     String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
     String secondTableName = DatabaseTestHelper.getTestTableName("UT_WRITE_AFTER_WAIT");
@@ -464,6 +513,21 @@ public class JdbcIOTest implements Serializable {
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, firstTableName);
     }
+  }
+
+  /**
+   * @return {@link JdbcIO.Write} transform that writes to {@param tableName} Postgres table and
+   *     returns all fields of modified rows.
+   */
+  private static JdbcIO.Write<KV<Integer, String>> getJdbcWriteWithReturning(String tableName) {
+    return JdbcIO.<KV<Integer, String>>write()
+        .withDataSourceProviderFn(voidInput -> pgDataSource)
+        .withStatement(String.format("insert into %s values(?, ?) returning *", tableName))
+        .withPreparedStatementSetter(
+            (element, statement) -> {
+              statement.setInt(1, element.getKey());
+              statement.setString(2, element.getValue());
+            });
   }
 
   private static JdbcIO.Write<KV<Integer, String>> getJdbcWrite(String tableName) {
