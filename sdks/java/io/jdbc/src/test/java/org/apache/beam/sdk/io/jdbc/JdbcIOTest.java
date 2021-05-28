@@ -17,7 +17,9 @@
  */
 package org.apache.beam.sdk.io.jdbc;
 
-import static org.apache.beam.sdk.io.common.IOITHelper.readIOTestPipelineOptions;
+import static org.apache.beam.sdk.io.common.DatabaseTestHelper.TEST_DTO_CODER;
+import static org.apache.beam.sdk.io.common.DatabaseTestHelper.TestDto;
+import static org.apache.beam.sdk.io.common.DatabaseTestHelper.assertRowCount;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
@@ -33,9 +35,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -44,7 +43,6 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.JDBCType;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
@@ -54,21 +52,15 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.TimeZone;
 import java.util.logging.LogRecord;
 import javax.sql.DataSource;
 import org.apache.beam.sdk.Pipeline.PipelineExecutionException;
-import org.apache.beam.sdk.coders.BigEndianIntegerCoder;
-import org.apache.beam.sdk.coders.Coder;
-import org.apache.beam.sdk.coders.CoderException;
-import org.apache.beam.sdk.coders.CustomCoder;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.io.common.DatabaseTestHelper;
-import org.apache.beam.sdk.io.common.PostgresIOTestPipelineOptions;
 import org.apache.beam.sdk.io.common.TestRow;
 import org.apache.beam.sdk.io.jdbc.JdbcIO.DataSourceConfiguration;
 import org.apache.beam.sdk.io.jdbc.JdbcIO.PoolableDataSourceProvider;
@@ -99,7 +91,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,56 +104,6 @@ public class JdbcIOTest implements Serializable {
   private static final DataSource DATA_SOURCE = DATA_SOURCE_CONFIGURATION.buildDatasource();
   private static final int EXPECTED_ROW_COUNT = 1000;
   private static final String READ_TABLE_NAME = DatabaseTestHelper.getTestTableName("UT_READ");
-
-  private static PGSimpleDataSource pgDataSource;
-
-  private static class TestDto implements Serializable {
-
-    public static final int EMPTY_RESULT = 0;
-
-    private int simpleField;
-
-    public TestDto(int simpleField) {
-      this.simpleField = simpleField;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      TestDto testDto = (TestDto) o;
-      return simpleField == testDto.simpleField;
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(simpleField);
-    }
-  }
-
-  public static final Coder<TestDto> TEST_DTO_CODER =
-      new CustomCoder<TestDto>() {
-        @Override
-        public void encode(TestDto value, OutputStream outStream)
-            throws CoderException, IOException {
-          BigEndianIntegerCoder.of().encode(value.simpleField, outStream);
-        }
-
-        @Override
-        public TestDto decode(InputStream inStream) throws CoderException, IOException {
-          int simpleField = BigEndianIntegerCoder.of().decode(inStream);
-          return new TestDto(simpleField);
-        }
-
-        @Override
-        public Object structuralValue(TestDto v) {
-          return v;
-        }
-      };
 
   @Rule public final transient TestPipeline pipeline = TestPipeline.create();
 
@@ -179,13 +120,6 @@ public class JdbcIOTest implements Serializable {
 
     DatabaseTestHelper.createTable(DATA_SOURCE, READ_TABLE_NAME);
     addInitialData(DATA_SOURCE, READ_TABLE_NAME);
-
-    // Postgres
-    PostgresIOTestPipelineOptions pgOptions =
-        readIOTestPipelineOptions(PostgresIOTestPipelineOptions.class);
-    pgDataSource = DatabaseTestHelper.getPostgresDataSource(pgOptions);
-    DatabaseTestHelper.createTable(pgDataSource, READ_TABLE_NAME);
-    addInitialData(pgDataSource, READ_TABLE_NAME);
   }
 
   @Test
@@ -412,18 +346,16 @@ public class JdbcIOTest implements Serializable {
 
       pipeline.run();
 
-      assertRowCount(tableName, EXPECTED_ROW_COUNT);
+      assertRowCount(DATA_SOURCE, tableName, EXPECTED_ROW_COUNT);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, tableName);
     }
   }
 
   @Test
-  public void testWriteWithNoReturningResults() throws Exception {
+  public void testWriteWithReturningResults() throws Exception {
     String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
-    String secondTableName = DatabaseTestHelper.getTestTableName("UT_WRITE_AFTER_WAIT");
     DatabaseTestHelper.createTable(DATA_SOURCE, firstTableName);
-    DatabaseTestHelper.createTable(DATA_SOURCE, secondTableName);
     try {
       ArrayList<KV<Integer, String>> data = getDataToWrite(EXPECTED_ROW_COUNT);
 
@@ -449,44 +381,7 @@ public class JdbcIOTest implements Serializable {
 
       pipeline.run();
 
-      assertRowCount(firstTableName, EXPECTED_ROW_COUNT);
-    } finally {
-      DatabaseTestHelper.deleteTable(DATA_SOURCE, firstTableName);
-    }
-  }
-
-  @Test
-  public void testWriteWithReturningResults() throws Exception {
-    String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
-    String secondTableName = DatabaseTestHelper.getTestTableName("UT_WRITE_AFTER_WAIT");
-    DatabaseTestHelper.createTable(DATA_SOURCE, firstTableName);
-    DatabaseTestHelper.createTable(DATA_SOURCE, secondTableName);
-    try {
-      ArrayList<KV<Integer, String>> data = getDataToWrite(EXPECTED_ROW_COUNT);
-
-      PCollection<KV<Integer, String>> dataCollection = pipeline.apply(Create.of(data));
-      PCollection<TestDto> resultSetCollection =
-          dataCollection.apply(
-              getJdbcWriteWithReturning(firstTableName)
-                  .withReturningResults(
-                      (resultSet -> {
-                        if (resultSet != null && resultSet.next()) {
-                          return new TestDto(resultSet.getInt(1));
-                        }
-                        return new TestDto(TestDto.EMPTY_RESULT);
-                      })));
-      resultSetCollection.setCoder(TEST_DTO_CODER);
-
-      List<TestDto> expectedResult = new ArrayList<>();
-      for (int id = 0; id < EXPECTED_ROW_COUNT; id++) {
-        expectedResult.add(new TestDto(id));
-      }
-
-      PAssert.that(resultSetCollection).containsInAnyOrder(expectedResult);
-
-      pipeline.run();
-
-      assertRowCount(firstTableName, EXPECTED_ROW_COUNT);
+      assertRowCount(DATA_SOURCE, firstTableName, EXPECTED_ROW_COUNT);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, firstTableName);
     }
@@ -508,26 +403,11 @@ public class JdbcIOTest implements Serializable {
 
       pipeline.run();
 
-      assertRowCount(firstTableName, EXPECTED_ROW_COUNT);
-      assertRowCount(secondTableName, EXPECTED_ROW_COUNT);
+      assertRowCount(DATA_SOURCE, firstTableName, EXPECTED_ROW_COUNT);
+      assertRowCount(DATA_SOURCE, secondTableName, EXPECTED_ROW_COUNT);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, firstTableName);
     }
-  }
-
-  /**
-   * @return {@link JdbcIO.Write} transform that writes to {@param tableName} Postgres table and
-   *     returns all fields of modified rows.
-   */
-  private static JdbcIO.Write<KV<Integer, String>> getJdbcWriteWithReturning(String tableName) {
-    return JdbcIO.<KV<Integer, String>>write()
-        .withDataSourceProviderFn(voidInput -> pgDataSource)
-        .withStatement(String.format("insert into %s values(?, ?) returning *", tableName))
-        .withPreparedStatementSetter(
-            (element, statement) -> {
-              statement.setInt(1, element.getKey());
-              statement.setString(2, element.getValue());
-            });
   }
 
   private static JdbcIO.Write<KV<Integer, String>> getJdbcWrite(String tableName) {
@@ -549,18 +429,6 @@ public class JdbcIOTest implements Serializable {
       data.add(kv);
     }
     return data;
-  }
-
-  private static void assertRowCount(String tableName, int expectedRowCount) throws SQLException {
-    try (Connection connection = DATA_SOURCE.getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-        try (ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
-          resultSet.next();
-          int count = resultSet.getInt(1);
-          assertEquals(expectedRowCount, count);
-        }
-      }
-    }
   }
 
   @Test
@@ -619,7 +487,7 @@ public class JdbcIOTest implements Serializable {
     // we verify the the backoff has been called thanks to the log message
     expectedLogs.verifyWarn("Deadlock detected, retrying");
 
-    assertRowCount(tableName, 2);
+    assertRowCount(DATA_SOURCE, tableName, 2);
   }
 
   @Test
@@ -671,7 +539,7 @@ public class JdbcIOTest implements Serializable {
                   .withBatchSize(10L)
                   .withTable(tableName));
       pipeline.run();
-      assertRowCount(tableName, rowsToAdd);
+      assertRowCount(DATA_SOURCE, tableName, rowsToAdd);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, tableName);
     }
@@ -754,7 +622,7 @@ public class JdbcIOTest implements Serializable {
                   .withBatchSize(10L)
                   .withTable(tableName));
       pipeline.run();
-      assertRowCount(tableName, rowsToAdd);
+      assertRowCount(DATA_SOURCE, tableName, rowsToAdd);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, tableName);
     }
@@ -1053,6 +921,6 @@ public class JdbcIOTest implements Serializable {
         });
 
     // Since the pipeline was unable to write, only the row from insertStatement was written.
-    assertRowCount(tableName, 1);
+    assertRowCount(DATA_SOURCE, tableName, 1);
   }
 }
