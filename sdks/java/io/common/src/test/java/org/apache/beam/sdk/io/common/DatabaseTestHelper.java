@@ -175,7 +175,8 @@ public class DatabaseTestHelper {
     return data;
   }
 
-  public static void assertRowCount(DataSource dataSource, String tableName, int expectedRowCount) throws SQLException {
+  public static void assertRowCount(DataSource dataSource, String tableName, int expectedRowCount)
+      throws SQLException {
     try (Connection connection = dataSource.getConnection()) {
       try (Statement statement = connection.createStatement()) {
         try (ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
