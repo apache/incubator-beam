@@ -17,6 +17,9 @@
  */
 package org.apache.beam.sdk.io.jdbc;
 
+import static org.apache.beam.sdk.io.common.DatabaseTestHelper.TEST_DTO_CODER;
+import static org.apache.beam.sdk.io.common.DatabaseTestHelper.TestDto;
+import static org.apache.beam.sdk.io.common.DatabaseTestHelper.assertRowCount;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
@@ -41,7 +44,6 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.JDBCType;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
@@ -345,14 +347,49 @@ public class JdbcIOTest implements Serializable {
 
       pipeline.run();
 
-      assertRowCount(tableName, EXPECTED_ROW_COUNT);
+      assertRowCount(DATA_SOURCE, tableName, EXPECTED_ROW_COUNT);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, tableName);
     }
   }
 
   @Test
-  public void testWriteWithResultsAndWaitOn() throws Exception {
+  public void testWriteWithReturningResults() throws Exception {
+    String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
+    DatabaseTestHelper.createTable(DATA_SOURCE, firstTableName);
+    try {
+      ArrayList<KV<Integer, String>> data = getDataToWrite(EXPECTED_ROW_COUNT);
+
+      PCollection<KV<Integer, String>> dataCollection = pipeline.apply(Create.of(data));
+      PCollection<TestDto> resultSetCollection =
+          dataCollection.apply(
+              getJdbcWrite(firstTableName)
+                  .withReturningResults(
+                      (resultSet -> {
+                        if (resultSet != null && resultSet.next()) {
+                          return new TestDto(resultSet.getInt(1));
+                        }
+                        return new TestDto(TestDto.EMPTY_RESULT);
+                      })));
+      resultSetCollection.setCoder(TEST_DTO_CODER);
+
+      List<TestDto> expectedResult = new ArrayList<>();
+      for (int i = 0; i < EXPECTED_ROW_COUNT; i++) {
+        expectedResult.add(new TestDto(TestDto.EMPTY_RESULT));
+      }
+
+      PAssert.that(resultSetCollection).containsInAnyOrder(expectedResult);
+
+      pipeline.run();
+
+      assertRowCount(DATA_SOURCE, firstTableName, EXPECTED_ROW_COUNT);
+    } finally {
+      DatabaseTestHelper.deleteTable(DATA_SOURCE, firstTableName);
+    }
+  }
+
+  @Test
+  public void testWriteWithVoidResultsAndWaitOn() throws Exception {
     String firstTableName = DatabaseTestHelper.getTestTableName("UT_WRITE");
     String secondTableName = DatabaseTestHelper.getTestTableName("UT_WRITE_AFTER_WAIT");
     DatabaseTestHelper.createTable(DATA_SOURCE, firstTableName);
@@ -362,13 +399,13 @@ public class JdbcIOTest implements Serializable {
 
       PCollection<KV<Integer, String>> dataCollection = pipeline.apply(Create.of(data));
       PCollection<Void> rowsWritten =
-          dataCollection.apply(getJdbcWrite(firstTableName).withResults());
+          dataCollection.apply(getJdbcWrite(firstTableName).withVoidResults());
       dataCollection.apply(Wait.on(rowsWritten)).apply(getJdbcWrite(secondTableName));
 
       pipeline.run();
 
-      assertRowCount(firstTableName, EXPECTED_ROW_COUNT);
-      assertRowCount(secondTableName, EXPECTED_ROW_COUNT);
+      assertRowCount(DATA_SOURCE, firstTableName, EXPECTED_ROW_COUNT);
+      assertRowCount(DATA_SOURCE, secondTableName, EXPECTED_ROW_COUNT);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, firstTableName);
     }
@@ -393,18 +430,6 @@ public class JdbcIOTest implements Serializable {
       data.add(kv);
     }
     return data;
-  }
-
-  private static void assertRowCount(String tableName, int expectedRowCount) throws SQLException {
-    try (Connection connection = DATA_SOURCE.getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-        try (ResultSet resultSet = statement.executeQuery("select count(*) from " + tableName)) {
-          resultSet.next();
-          int count = resultSet.getInt(1);
-          assertEquals(expectedRowCount, count);
-        }
-      }
-    }
   }
 
   @Test
@@ -463,7 +488,7 @@ public class JdbcIOTest implements Serializable {
     // we verify that the backoff has been called thanks to the log message
     expectedLogs.verifyWarn("Deadlock detected, retrying");
 
-    assertRowCount(tableName, 2);
+    assertRowCount(DATA_SOURCE, tableName, 2);
   }
 
   @Test
@@ -515,7 +540,7 @@ public class JdbcIOTest implements Serializable {
                   .withBatchSize(10L)
                   .withTable(tableName));
       pipeline.run();
-      assertRowCount(tableName, rowsToAdd);
+      assertRowCount(DATA_SOURCE, tableName, rowsToAdd);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, tableName);
     }
@@ -598,7 +623,7 @@ public class JdbcIOTest implements Serializable {
                   .withBatchSize(10L)
                   .withTable(tableName));
       pipeline.run();
-      assertRowCount(tableName, rowsToAdd);
+      assertRowCount(DATA_SOURCE, tableName, rowsToAdd);
     } finally {
       DatabaseTestHelper.deleteTable(DATA_SOURCE, tableName);
     }
@@ -897,7 +922,7 @@ public class JdbcIOTest implements Serializable {
         });
 
     // Since the pipeline was unable to write, only the row from insertStatement was written.
-    assertRowCount(tableName, 1);
+    assertRowCount(DATA_SOURCE, tableName, 1);
   }
 
   @Test
