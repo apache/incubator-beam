@@ -145,7 +145,6 @@ REQUIRED_PACKAGES = [
     'httplib2>=0.8,<0.20.0',
     'numpy>=1.14.3,<1.21.0',
     'pymongo>=3.8.0,<4.0.0',
-    'oauth2client>=2.0.1,<5',
     'protobuf>=3.12.2,<4',
     'pyarrow>=0.15.1,<5.0.0',
     'pydot>=1.2.0,<2',
@@ -184,6 +183,7 @@ GCP_REQUIREMENTS = [
     'cachetools>=3.1.0,<5',
     'google-apitools>=0.5.31,<0.5.32',
     'google-auth>=1.18.0,<2',
+    'google-auth-httplib2>=0.1.0,<0.2.0',
     'google-cloud-datastore>=1.8.0,<2',
     'google-cloud-pubsub>=0.39.0,<2',
     # GCP packages required by tests
