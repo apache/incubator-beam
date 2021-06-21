@@ -375,6 +375,14 @@ public class SpannerIO {
         .build();
   }
 
+  @Experimental
+  public static WaitCreateTransaction waitCreateTransaction() {
+    return new AutoValue_SpannerIO_WaitCreateTransaction.Builder()
+        .setSpannerConfig(SpannerConfig.create())
+        .setTimestampBound(TimestampBound.strong())
+        .build();
+  }
+
   /**
    * Creates an uninitialized instance of {@link Write}. Before use, the {@link Write} must be
    * configured with a {@link Write#withInstanceId} and {@link Write#withDatabaseId} that identify
@@ -759,7 +767,8 @@ public class SpannerIO {
 
       return input
           .apply(Create.of(1))
-          .apply("Create transaction", ParDo.of(new CreateTransactionFn(this)))
+          .apply("Create transaction",
+              ParDo.of(new CreateTransactionFn(this.getSpannerConfig(), this.getTimestampBound())))
           .apply("As PCollectionView", View.asSingleton());
     }
 
@@ -840,6 +849,55 @@ public class SpannerIO {
       public abstract Builder setTimestampBound(TimestampBound newTimestampBound);
 
       public abstract CreateTransaction build();
+    }
+  }
+
+  /**
+   * A {@link PTransform} that creates a transaction after waiting on the input {@link PCollection}.
+   *
+   * <p>This can mitigate SpannerIO error caused by <a href="https://cloud.google.com/spanner/docs/sessions#keep_an_idle_session_alive">session dropped by idleness</a>.
+   *
+   * @see CreateTransaction
+   * @see Wait
+   */
+  @AutoValue
+  public abstract static class WaitCreateTransaction extends
+      PTransform<PCollection<?>, PCollectionView<Transaction>> { // BEAM-12504
+
+    abstract SpannerConfig getSpannerConfig();
+
+    abstract @Nullable TimestampBound getTimestampBound();
+
+    abstract Builder toBuilder();
+
+    @Override
+    public PCollectionView<Transaction> expand(PCollection<?> input) {
+      getSpannerConfig().validate();
+
+      return input.getPipeline()
+          .apply(Create.of(1))
+          .apply(Wait.on(input))
+          .apply("Create transaction",
+              ParDo.of(new CreateTransactionFn(this.getSpannerConfig(), this.getTimestampBound())))
+          .apply("As PCollectionView", View.asSingleton());
+    }
+
+    public WaitCreateTransaction withSpannerConfig(SpannerConfig spannerConfig) {
+      return toBuilder().setSpannerConfig(spannerConfig).build();
+    }
+
+    public WaitCreateTransaction withTimestampBound(TimestampBound timestampBound) {
+      return toBuilder().setTimestampBound(timestampBound).build();
+    }
+
+    @AutoValue.Builder
+    public abstract static class Builder {
+
+      public abstract Builder setSpannerConfig(SpannerConfig spannerConfig);
+
+      public abstract Builder setTimestampBound(TimestampBound newTimestampBound);
+
+      public abstract WaitCreateTransaction build();
     }
   }
 
