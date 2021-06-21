@@ -236,7 +236,11 @@ public interface BigQueryServices extends Serializable {
     /** Read rows in the context of a specific read stream. */
     BigQueryServerStream<ReadRowsResponse> readRows(ReadRowsRequest request);
 
+    BigQueryServerStream<ReadRowsResponse> readRows(ReadRowsRequest request, String fullTableId);
+
     SplitReadStreamResponse splitReadStream(SplitReadStreamRequest request);
+
+    SplitReadStreamResponse splitReadStream(SplitReadStreamRequest request, String fullTableId);
 
     /**
      * Close the client object.
