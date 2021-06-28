@@ -25,7 +25,8 @@ from apache_beam.dataframe import expressions
 from apache_beam.dataframe import frame_base
 from apache_beam.dataframe import frames
 
-PD_VERSION = tuple(map(int, pd.__version__.split('.')))
+# Get major, minor version
+PD_VERSION = tuple(map(int, pd.__version__.split('.')[0:2]))
 
 GROUPBY_DF = pd.DataFrame({
     'group': ['a' if i % 5 == 0 or i % 3 == 0 else 'b' for i in range(100)],
@@ -225,6 +226,13 @@ class DeferredFrameTest(_AbstractFrameTest):
     b = pd.Series([100, 200, 300])
     self._run_test(lambda a, b: a - 2 * b, a, b)
 
+  def test_value_counts_dropna_false(self):
+    df = pd.DataFrame({
+        'first_name': ['John', 'Anne', 'John', 'Beth'],
+        'middle_name': ['Smith', pd.NA, pd.NA, 'Louise']
+    })
+    self._run_test(lambda df: df.value_counts(dropna=False), df)
+
   def test_get_column(self):
     df = pd.DataFrame({
         'Animal': ['Falcon', 'Falcon', 'Parrot', 'Parrot'],
@@ -359,10 +367,15 @@ class DeferredFrameTest(_AbstractFrameTest):
         nonparallel=True)
 
   def test_combine_Series(self):
-    with expressions.allow_non_parallel_operations():
-      s1 = pd.Series({'falcon': 330.0, 'eagle': 160.0})
-      s2 = pd.Series({'falcon': 345.0, 'eagle': 200.0, 'duck': 30.0})
-      self._run_test(lambda s1, s2: s1.combine(s2, max), s1, s2)
+    s1 = pd.Series({'falcon': 330.0, 'eagle': 160.0})
+    s2 = pd.Series({'falcon': 345.0, 'eagle': 200.0, 'duck': 30.0})
+    self._run_test(
+        lambda s1,
+        s2: s1.combine(s2, max),
+        s1,
+        s2,
+        nonparallel=True,
+        check_proxy=False)
 
   def test_combine_first_dataframe(self):
     df1 = pd.DataFrame({'A': [None, 0], 'B': [None, 4]})
@@ -577,8 +590,13 @@ class DeferredFrameTest(_AbstractFrameTest):
     self._run_test(lambda df: df.value_counts(), df)
     self._run_test(lambda df: df.value_counts(normalize=True), df)
 
+    if PD_VERSION >= (1, 3):
+      # dropna=False is new in pandas 1.3
+      self._run_test(lambda df: df.value_counts(dropna=False), df)
+
     self._run_test(lambda df: df.num_wings.value_counts(), df)
     self._run_test(lambda df: df.num_wings.value_counts(normalize=True), df)
+    self._run_test(lambda df: df.num_wings.value_counts(dropna=False), df)
 
   def test_value_counts_does_not_support_sort(self):
     df = pd.DataFrame({

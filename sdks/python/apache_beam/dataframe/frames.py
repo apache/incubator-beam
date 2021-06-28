@@ -55,6 +55,9 @@ __all__ = [
     'DeferredDataFrame',
 ]
 
+# Get major, minor version
+PD_VERSION = tuple(map(int, pd.__version__.split('.')[0:2]))
+
 
 def populate_not_implemented(pd_type):
   def wrapper(deferred_type):
@@ -238,8 +241,10 @@ class DeferredDataFrameOrSeries(frame_base.DeferredFrame):
 
     if isinstance(value, frame_base.DeferredBase):
       value_expr = value._expr
+      requires = partitionings.Index()
     else:
       value_expr = expressions.ConstantExpression(value)
+      requires = partitionings.Arbitrary()
 
     return frame_base.DeferredFrame.wrap(
         # yapf: disable
@@ -250,7 +255,7 @@ class DeferredDataFrameOrSeries(frame_base.DeferredFrame):
                 value, method=method, axis=axis, limit=limit, **kwargs),
             [self._expr, value_expr],
             preserves_partition_by=partitionings.Arbitrary(),
-            requires_partition_by=partitionings.Arbitrary()))
+            requires_partition_by=requires))
 
   ffill = _fillna_alias('ffill')
   bfill = _fillna_alias('bfill')
@@ -2271,8 +2276,8 @@ class DeferredDataFrame(DeferredDataFrameOrSeries):
     if func in ('quantile',):
       return getattr(self, func)(*args, axis=axis, **kwargs)
 
-    # Maps to a property, args are ignored
-    if func in ('size',):
+    # In pandas<1.3.0, maps to a property, args are ignored
+    if func in ('size',) and PD_VERSION < (1,3):
       return getattr(self, func)
 
     # We also have specialized distributed implementations for these. They only
@@ -3252,7 +3257,7 @@ class DeferredDataFrame(DeferredDataFrameOrSeries):
 
   @frame_base.with_docs_from(pd.DataFrame)
   def value_counts(self, subset=None, sort=False, normalize=False,
-                   ascending=False):
+                   ascending=False, dropna=True):
     """``sort`` is ``False`` by default, and ``sort=True`` is not supported
     because it imposes an ordering on the dataset which likely will not be
     preserved."""
@@ -3263,10 +3268,16 @@ class DeferredDataFrame(DeferredDataFrameOrSeries):
           "ordering on the dataset which likely will not be preserved.",
           reason="order-sensitive")
     columns = subset or list(self.columns)
-    result = self.groupby(columns).size()
+
+    if dropna:
+      dropped = self.dropna()
+    else:
+      dropped = self
+
+    result = dropped.groupby(columns, dropna=dropna).size()
 
     if normalize:
-      return result/self.dropna().length()
+      return result/dropped.length()
     else:
       return result
 
