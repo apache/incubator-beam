@@ -24,6 +24,8 @@ import threading
 import unittest
 from urllib.parse import quote
 
+import mock
+
 from apache_beam.portability import common_urns
 from apache_beam.portability.api import beam_artifact_api_pb2
 from apache_beam.portability.api import beam_runner_api_pb2
@@ -121,6 +123,24 @@ class ArtifactServiceTest(unittest.TestCase):
     ])
     with open(__file__, 'rb') as fin:
       self.assertEqual(content, fin.read())
+
+  def test_gcs_retrieval(self):
+    retrieval_service = artifact_service.ArtifactRetrievalService(None)
+    url_dep = beam_runner_api_pb2.ArtifactInformation(
+        type_urn=common_urns.artifact_types.URL.urn,
+        type_payload=beam_runner_api_pb2.ArtifactUrlPayload(
+            url='gs://test_gcs_retrieval').SerializeToString())
+    with mock.patch('apache_beam.runners.portability.artifact_service.'
+                    'GCSFileSystem.open') as mock_open:
+      mock_read_handle = mock.Mock()
+      mock_read_handle.read.return_value = b''
+      mock_open.return_value = mock_read_handle
+      content = b''.join([
+          r.data for r in retrieval_service.GetArtifact(
+              beam_artifact_api_pb2.GetArtifactRequest(artifact=url_dep))
+      ])
+      mock_open.assert_called_once_with('gs://test_gcs_retrieval')
+
 
   def test_push_artifacts(self):
     unresolved = beam_runner_api_pb2.ArtifactInformation(type_urn='unresolved')

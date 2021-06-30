@@ -43,7 +43,8 @@ from urllib.request import urlopen
 import grpc
 
 from apache_beam.io import filesystems
-from apache_beam.io.filesystems import CompressionTypes
+from apache_beam.io.filesystems import CompressionTypes, FileSystems
+from apache_beam.io.gcp.gcsfilesystem import GCSFileSystem
 from apache_beam.portability import common_urns
 from apache_beam.portability.api import beam_artifact_api_pb2
 from apache_beam.portability.api import beam_artifact_api_pb2_grpc
@@ -63,6 +64,7 @@ class ArtifactRetrievalService(
   ):
     self._file_reader = file_reader
     self._chunk_size = chunk_size or self._DEFAULT_CHUNK_SIZE
+    self._gcs_file_system = GCSFileSystem(pipeline_options=None)
 
   def ResolveArtifacts(self, request, context=None):
     return beam_artifact_api_pb2.ResolveArtifactsResponse(
@@ -77,8 +79,10 @@ class ArtifactRetrievalService(
     elif request.artifact.type_urn == common_urns.artifact_types.URL.urn:
       payload = proto_utils.parse_Bytes(
           request.artifact.type_payload, beam_runner_api_pb2.ArtifactUrlPayload)
-      # TODO(Py3): Remove the unneeded contextlib wrapper.
-      read_handle = contextlib.closing(urlopen(payload.url))
+      if FileSystems.get_scheme(payload.url) == GCSFileSystem.scheme():
+        read_handle = contextlib.closing(self._gcs_file_system.open(payload.url))
+      else:
+        read_handle = urlopen(payload.url)
     elif request.artifact.type_urn == common_urns.artifact_types.EMBEDDED.urn:
       payload = proto_utils.parse_Bytes(
           request.artifact.type_payload,

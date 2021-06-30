@@ -64,6 +64,7 @@ import pkg_resources
 from apache_beam.internal import pickler
 from apache_beam.internal.http_client import get_new_http
 from apache_beam.io.filesystems import FileSystems
+from apache_beam.io.gcp.gcsfilesystem import GCSFileSystem
 from apache_beam.options.pipeline_options import DebugOptions
 from apache_beam.options.pipeline_options import PipelineOptions  # pylint: disable=unused-import
 from apache_beam.options.pipeline_options import SetupOptions
@@ -114,6 +115,13 @@ class Stager(object):
     """For internal use only; no backwards-compatibility guarantees.
         Returns the PyPI package name to be staged."""
     return names.BEAM_PACKAGE_NAME
+
+  @staticmethod
+  def _create_url_artifact(remote_path):
+    return beam_runner_api_pb2.ArtifactInformation(
+        type_urn=common_urns.artifact_types.URL.urn,
+        type_payload=beam_runner_api_pb2.ArtifactUrlPayload(
+            url=remote_path).SerializeToString())
 
   @staticmethod
   def _create_file_stage_to_artifact(local_path, staged_name):
@@ -527,6 +535,14 @@ class Stager(object):
     return resources
 
   @staticmethod
+  def _should_download_remote_extra_packages(package):
+    # Defer package download to workers if URI scheme is http, https or
+    # package is on Google Cloud Storage
+    return not (package.startswith('http://') or
+                package.startswith('https://') or
+                FileSystems.get_scheme(package) == GCSFileSystem.scheme())
+
+  @staticmethod
   def _create_extra_packages(extra_packages, temp_dir):
     # type: (...) -> List[beam_runner_api_pb2.ArtifactInformation]
 
@@ -551,6 +567,7 @@ class Stager(object):
     resources = []  # type: List[beam_runner_api_pb2.ArtifactInformation]
     staging_temp_dir = tempfile.mkdtemp(dir=temp_dir)
     local_packages = []  # type: List[str]
+    remote_packages = []  # type: List[str]
     for package in extra_packages:
       if not (os.path.basename(package).endswith('.tar') or
               os.path.basename(package).endswith('.tar.gz') or
@@ -569,12 +586,17 @@ class Stager(object):
 
       if not os.path.isfile(package):
         if Stager._is_remote_path(package):
-          # Download remote package.
-          _LOGGER.info(
-              'Downloading extra package: %s locally before staging', package)
-          _, last_component = FileSystems.split(package)
-          local_file_path = FileSystems.join(staging_temp_dir, last_component)
-          Stager._download_file(package, local_file_path)
+          if Stager._should_download_remote_extra_packages(package):
+            # Download remote package.
+            _LOGGER.info(
+                'Downloading extra package: %s locally before staging', package)
+            _, last_component = FileSystems.split(package)
+            local_file_path = FileSystems.join(staging_temp_dir, last_component)
+            Stager._download_file(package, local_file_path)
+          else:
+            remote_packages.append(package)
+            _LOGGER.info(
+                'Deferring download of extra package: %s to workers', package)
         else:
           raise RuntimeError(
               'The file %s cannot be found. It was specified in the '
@@ -590,6 +612,8 @@ class Stager(object):
     for package in local_packages:
       basename = os.path.basename(package)
       resources.append(Stager._create_file_stage_to_artifact(package, basename))
+    for package in remote_packages:
+      resources.append(Stager._create_url_artifact(package))
     # Create a file containing the list of extra packages and stage it.
     # The file is important so that in the worker the packages are installed
     # exactly in the order specified. This approach will avoid extra PyPI
@@ -598,7 +622,8 @@ class Stager(object):
     # dependency on B by downloading the package from PyPI. If package B is
     # installed first this is avoided.
     with open(os.path.join(temp_dir, EXTRA_PACKAGES_FILE), 'wt') as f:
-      for package in local_packages:
+      all_packages = local_packages + remote_packages
+      for package in all_packages:
         f.write('%s\n' % os.path.basename(package))
     # Note that the caller of this function is responsible for deleting the
     # temporary folder where all temp files are created, including this one.
