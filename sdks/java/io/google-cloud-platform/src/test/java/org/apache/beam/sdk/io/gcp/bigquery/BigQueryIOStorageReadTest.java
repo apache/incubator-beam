@@ -640,6 +640,8 @@ public class BigQueryIOStorageReadTest {
 
     BigQueryStorageStreamSource<TableRow> streamSource =
         BigQueryStorageStreamSource.create(
+            0L,
+            Long.MAX_VALUE,
             ReadSession.getDefaultInstance(),
             ReadStream.getDefaultInstance(),
             TABLE_SCHEMA,
@@ -655,6 +657,8 @@ public class BigQueryIOStorageReadTest {
 
     BigQueryStorageStreamSource<TableRow> streamSource =
         BigQueryStorageStreamSource.create(
+            0L,
+            Long.MAX_VALUE,
             ReadSession.getDefaultInstance(),
             ReadStream.getDefaultInstance(),
             TABLE_SCHEMA,
@@ -694,6 +698,8 @@ public class BigQueryIOStorageReadTest {
 
     BigQueryStorageStreamSource<TableRow> streamSource =
         BigQueryStorageStreamSource.create(
+            0L,
+            Long.MAX_VALUE,
             readSession,
             ReadStream.newBuilder().setName("readStream").build(),
             TABLE_SCHEMA,
@@ -750,6 +756,8 @@ public class BigQueryIOStorageReadTest {
 
     BigQueryStorageStreamSource<TableRow> streamSource =
         BigQueryStorageStreamSource.create(
+            0L,
+            Long.MAX_VALUE,
             readSession,
             ReadStream.newBuilder().setName("readStream").build(),
             TABLE_SCHEMA,
@@ -836,6 +844,8 @@ public class BigQueryIOStorageReadTest {
 
     BigQueryStorageStreamSource<TableRow> streamSource =
         BigQueryStorageStreamSource.create(
+            0L,
+            Long.MAX_VALUE,
             readSession,
             ReadStream.newBuilder().setName("parentStream").build(),
             TABLE_SCHEMA,
@@ -918,6 +928,8 @@ public class BigQueryIOStorageReadTest {
 
     BigQueryStorageStreamSource<TableRow> streamSource =
         BigQueryStorageStreamSource.create(
+            0L,
+            Long.MAX_VALUE,
             ReadSession.newBuilder()
                 .setName("readSession")
                 .setAvroSchema(AvroSchema.newBuilder().setSchema(AVRO_SCHEMA_STRING))
@@ -1053,6 +1065,8 @@ public class BigQueryIOStorageReadTest {
 
     BoundedSource<TableRow> source =
         BigQueryStorageStreamSource.create(
+            0L,
+            Long.MAX_VALUE,
             ReadSession.newBuilder()
                 .setName("readSession")
                 .setAvroSchema(AvroSchema.newBuilder().setSchema(AVRO_SCHEMA_STRING))
@@ -1117,6 +1131,8 @@ public class BigQueryIOStorageReadTest {
 
     BigQueryStorageStreamSource<TableRow> streamSource =
         BigQueryStorageStreamSource.create(
+            0L,
+            Long.MAX_VALUE,
             ReadSession.newBuilder()
                 .setName("readSession")
                 .setAvroSchema(AvroSchema.newBuilder().setSchema(AVRO_SCHEMA_STRING))
@@ -1205,6 +1221,8 @@ public class BigQueryIOStorageReadTest {
 
     BigQueryStorageStreamSource<TableRow> streamSource =
         BigQueryStorageStreamSource.create(
+            0L,
+            Long.MAX_VALUE,
             ReadSession.newBuilder()
                 .setName("readSession")
                 .setAvroSchema(AvroSchema.newBuilder().setSchema(AVRO_SCHEMA_STRING))

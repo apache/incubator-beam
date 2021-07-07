@@ -1353,6 +1353,8 @@ public class BigQueryIO {
 
                                 BigQueryStorageStreamSource<T> streamSource =
                                     BigQueryStorageStreamSource.create(
+                                        0L,
+                                        Long.MAX_VALUE,
                                         readSession,
                                         readStream,
                                         tableSchema,
