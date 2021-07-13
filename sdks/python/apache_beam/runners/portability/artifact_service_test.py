@@ -24,7 +24,7 @@ import threading
 import unittest
 from urllib.parse import quote
 
-import mock
+from unittest import mock
 
 from apache_beam.portability import common_urns
 from apache_beam.portability.api import beam_artifact_api_pb2
@@ -129,17 +129,13 @@ class ArtifactServiceTest(unittest.TestCase):
     url_dep = beam_runner_api_pb2.ArtifactInformation(
         type_urn=common_urns.artifact_types.URL.urn,
         type_payload=beam_runner_api_pb2.ArtifactUrlPayload(
-            url='gs://test_gcs_retrieval').SerializeToString())
+            url='gs://remote_gcs_dir/remote_gcs_file.tar.gz').SerializeToString())
     with mock.patch('apache_beam.runners.portability.artifact_service.'
                     'GCSFileSystem.open') as mock_open:
       mock_read_handle = mock.Mock()
       mock_read_handle.read.return_value = b''
       mock_open.return_value = mock_read_handle
-      content = b''.join([
-          r.data for r in retrieval_service.GetArtifact(
-              beam_artifact_api_pb2.GetArtifactRequest(artifact=url_dep))
-      ])
-      mock_open.assert_called_once_with('gs://test_gcs_retrieval')
+      mock_open.assert_called_once_with('gs://remote_gcs_dir/remote_gcs_file.tar.gz')
 
 
   def test_push_artifacts(self):
