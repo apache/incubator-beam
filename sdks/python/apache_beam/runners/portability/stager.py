@@ -535,14 +535,6 @@ class Stager(object):
     return resources
 
   @staticmethod
-  def _should_download_remote_extra_packages(package):
-    # Defer package download to workers if URI scheme is http, https or
-    # package is on Google Cloud Storage
-    return not (package.startswith('http://') or
-                package.startswith('https://') or
-                FileSystems.get_scheme(package) == GCSFileSystem.scheme())
-
-  @staticmethod
   def _create_extra_packages(extra_packages, temp_dir):
     # type: (...) -> List[beam_runner_api_pb2.ArtifactInformation]
 
@@ -586,17 +578,9 @@ class Stager(object):
 
       if not os.path.isfile(package):
         if Stager._is_remote_path(package):
-          if Stager._should_download_remote_extra_packages(package):
-            # Download remote package.
-            _LOGGER.info(
-                'Downloading extra package: %s locally before staging', package)
-            _, last_component = FileSystems.split(package)
-            local_file_path = FileSystems.join(staging_temp_dir, last_component)
-            Stager._download_file(package, local_file_path)
-          else:
-            remote_packages.append(package)
-            _LOGGER.info(
-                'Deferring download of extra package: %s to workers', package)
+          remote_packages.append(package)
+          _LOGGER.info(
+              'Deferring download of extra package: %s to workers', package)
         else:
           raise RuntimeError(
               'The file %s cannot be found. It was specified in the '
