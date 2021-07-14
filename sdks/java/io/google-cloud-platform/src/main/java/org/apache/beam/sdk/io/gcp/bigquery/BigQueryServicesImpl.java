@@ -870,24 +870,36 @@ class BigQueryServicesImpl implements BigQueryServices {
         // Store the longest throttled time across all parallel threads
         final AtomicLong maxThrottlingMsec = new AtomicLong();
 
-        for (int i = 0; i < rowsToPublish.size(); ++i) {
-          TableRow row = rowsToPublish.get(i).getValue();
-          TableDataInsertAllRequest.Rows out = new TableDataInsertAllRequest.Rows();
-          if (idsToPublish != null) {
-            out.setInsertId(idsToPublish.get(i));
-          }
-          out.setJson(row.getUnknownKeys());
-          rows.add(out);
-
+        int j = 0;
+        TableRow row = rowsToPublish.get(j).getValue();
+        while (row != null) {
+          long rowSize;
           try {
-            dataSize += TableRowJsonCoder.of().getEncodedElementByteSize(row);
+            rowSize = TableRowJsonCoder.of().getEncodedElementByteSize(row);
+            dataSize += rowSize;
           } catch (Exception ex) {
             throw new RuntimeException("Failed to convert the row to JSON", ex);
           }
 
-          if (dataSize >= maxRowBatchSize
-              || rows.size() >= maxRowsPerBatch
-              || i == rowsToPublish.size() - 1) {
+          // If this row fits within the buffer, then we include it in the buffer to be inserted
+          // afterwards.
+          if ((dataSize < maxRowBatchSize && rows.size() < maxRowsPerBatch)
+              // CORNER CASE: We have a single row that goes beyond the appropriate batch size
+              // for the records. In this case, we attempt to insert that row individually.
+              || (rows.size() == 0 && dataSize >= maxRowBatchSize)) {
+            TableDataInsertAllRequest.Rows out = new TableDataInsertAllRequest.Rows();
+            if (idsToPublish != null) {
+              out.setInsertId(idsToPublish.get(j));
+            }
+            out.setJson(row.getUnknownKeys());
+            rows.add(out);
+            j++;
+            row = j == rowsToPublish.size() ? null : rowsToPublish.get(j).getValue();
+          }
+
+          // If we are at the end of rowsToPublish, or if we have hit a row that passes
+          // the limits for request sizes, we insert the current batch.
+          if (row == null || dataSize >= maxRowBatchSize || rows.size() >= maxRowsPerBatch) {
             TableDataInsertAllRequest content = new TableDataInsertAllRequest();
             content.setRows(rows);
             content.setSkipInvalidRows(skipInvalidRows);
@@ -964,7 +976,7 @@ class BigQueryServicesImpl implements BigQueryServices {
             retTotalDataSize += dataSize;
 
             dataSize = 0L;
-            strideIndex = i + 1;
+            strideIndex = j + 1;
             rows = new ArrayList<>();
           }
         }
