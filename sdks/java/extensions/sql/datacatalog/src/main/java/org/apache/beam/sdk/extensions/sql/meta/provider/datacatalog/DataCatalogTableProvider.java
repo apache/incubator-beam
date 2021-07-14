@@ -23,11 +23,11 @@ import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.gax.rpc.NotFoundException;
 import com.google.api.gax.rpc.PermissionDeniedException;
 import com.google.api.gax.rpc.StatusCode.Code;
-import com.google.cloud.datacatalog.v1beta1.DataCatalogClient;
-import com.google.cloud.datacatalog.v1beta1.DataCatalogSettings;
-import com.google.cloud.datacatalog.v1beta1.Entry;
-import com.google.cloud.datacatalog.v1beta1.LookupEntryRequest;
-import com.google.cloud.datacatalog.v1beta1.UpdateEntryRequest;
+import com.google.cloud.datacatalog.v1.DataCatalogClient;
+import com.google.cloud.datacatalog.v1.DataCatalogSettings;
+import com.google.cloud.datacatalog.v1.Entry;
+import com.google.cloud.datacatalog.v1.LookupEntryRequest;
+import com.google.cloud.datacatalog.v1.UpdateEntryRequest;
 import com.google.protobuf.FieldMask;
 import java.io.IOException;
 import java.util.HashMap;
@@ -59,9 +59,6 @@ public class DataCatalogTableProvider extends FullNameTableProvider implements A
 
   private static final Logger LOG = LoggerFactory.getLogger(DataCatalogTableProvider.class);
 
-  private static final TableFactory PUBSUB_TABLE_FACTORY = new PubsubTableFactory();
-  private static final TableFactory GCS_TABLE_FACTORY = new GcsTableFactory();
-
   private static final Map<String, TableProvider> DELEGATE_PROVIDERS =
       Stream.of(new PubsubTableProvider(), new BigQueryTableProvider(), new TextTableProvider())
           .collect(toMap(TableProvider::getTableType, p -> p));
@@ -75,7 +72,9 @@ public class DataCatalogTableProvider extends FullNameTableProvider implements A
     this.dataCatalog = dataCatalog;
     this.tableFactory =
         ChainedTableFactory.of(
-            PUBSUB_TABLE_FACTORY, GCS_TABLE_FACTORY, new BigQueryTableFactory(truncateTimestamps));
+            new PubsubTableFactory(),
+            new GcsTableFactory(),
+            new BigQueryTableFactory(truncateTimestamps));
   }
 
   public static DataCatalogTableProvider create(DataCatalogPipelineOptions options) {
@@ -193,14 +192,15 @@ public class DataCatalogTableProvider extends FullNameTableProvider implements A
   }
 
   private Table toCalciteTable(String tableName, Entry entry) {
-    if (entry.getSchema().getColumnsCount() == 0) {
+    com.google.cloud.datacatalog.v1.Schema dcSchema = entry.getSchema();
+    if (dcSchema.getColumnsCount() == 0 && !dcSchema.hasPhysicalSchema()) {
       throw new UnsupportedOperationException(
           "Entry doesn't have a schema. Please attach a schema to '"
               + tableName
               + "' in Data Catalog: "
               + entry.toString());
     }
-    Schema schema = SchemaUtils.fromDataCatalog(entry.getSchema());
+    Schema schema = SchemaUtils.fromDataCatalog(dcSchema);
 
     Optional<Table.Builder> tableBuilder = tableFactory.tableBuilder(entry);
     if (!tableBuilder.isPresent()) {
@@ -218,7 +218,7 @@ public class DataCatalogTableProvider extends FullNameTableProvider implements A
 
   @Internal
   public boolean setSchemaIfNotPresent(String resource, Schema schema) {
-    com.google.cloud.datacatalog.v1beta1.Schema dcSchema = SchemaUtils.toDataCatalog(schema);
+    com.google.cloud.datacatalog.v1.Schema dcSchema = SchemaUtils.toDataCatalog(schema);
     Entry entry =
         dataCatalog.lookupEntry(LookupEntryRequest.newBuilder().setSqlResource(resource).build());
     if (entry.getSchema().getColumnsCount() == 0) {
