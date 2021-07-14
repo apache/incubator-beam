@@ -54,8 +54,16 @@ V = TypeVar('V')
 TimestampType = Union[int, float, Timestamp, Duration]
 
 
-class CombinerWithoutDefaults(ptransform.PTransform):
-  """Super class to inherit without_defaults to built-in Combiners."""
+class _SupportsCombiningGlobally(ptransform.PTransform):
+  """Helper for defining per-window combine scenarios in built-in combiners.
+
+  In combine-per-window scenarios users may need to indicate how to reduce an
+  empty input collection when a window has no elements. The result can
+  either be a default value (obtained by calling a combiner on an empty input)
+  or an empty collection if without_defaults() is used.
+
+  Note that combine-per-key scenarios always have an non-empty input.
+  """
   def __init__(self, has_defaults=True):
     super(CombinerWithoutDefaults, self).__init__()
     self.has_defaults = has_defaults
@@ -71,7 +79,7 @@ class CombinerWithoutDefaults(ptransform.PTransform):
 
 class Mean(object):
   """Combiners for computing arithmetic means of elements."""
-  class Globally(CombinerWithoutDefaults):
+  class Globally(_SupportsCombiningGlobally):
     """combiners.Mean.Globally computes the arithmetic mean of the elements."""
     def expand(self, pcoll):
       if self.has_defaults:
@@ -118,7 +126,7 @@ class MeanCombineFn(core.CombineFn):
 
 class Count(object):
   """Combiners for counting elements."""
-  class Globally(CombinerWithoutDefaults):
+  class Globally(_SupportsCombiningGlobally):
     """combiners.Count.Globally counts the total number of elements."""
     def expand(self, pcoll):
       if self.has_defaults:
@@ -169,7 +177,7 @@ class Top(object):
 
   # pylint: disable=no-self-argument
 
-  class Of(CombinerWithoutDefaults):
+  class Of(_SupportsCombiningGlobally):
     """Obtain a list of the compare-most N elements in a PCollection.
 
     This transform will retrieve the n greatest elements in the PCollection
@@ -524,7 +532,7 @@ class Sample(object):
 
   # pylint: disable=no-self-argument
 
-  class FixedSizeGlobally(CombinerWithoutDefaults):
+  class FixedSizeGlobally(_SupportsCombiningGlobally):
     """Sample n elements from the input PCollection without replacement."""
     def __init__(self, n):
       super(Sample.FixedSizeGlobally, self).__init__()
@@ -670,7 +678,7 @@ class SingleInputTupleCombineFn(_TupleCombineFnBase):
     ]
 
 
-class ToList(CombinerWithoutDefaults):
+class ToList(_SupportsCombiningGlobally):
   """A global CombineFn that condenses a PCollection into a single list."""
   def expand(self, pcoll):
     if self.has_defaults:
@@ -698,7 +706,7 @@ class ToListCombineFn(core.CombineFn):
     return accumulator
 
 
-class ToDict(CombinerWithoutDefaults):
+class ToDict(_SupportsCombiningGlobally):
   """A global CombineFn that condenses a PCollection into a single dict.
 
   PCollections should consist of 2-tuples, notionally (key, value) pairs.
@@ -735,7 +743,7 @@ class ToDictCombineFn(core.CombineFn):
     return accumulator
 
 
-class ToSet(CombinerWithoutDefaults):
+class ToSet(_SupportsCombiningGlobally):
   """A global CombineFn that condenses a PCollection into a set."""
   def expand(self, pcoll):
     if self.has_defaults:
@@ -843,7 +851,7 @@ class Latest(object):
   """Combiners for computing the latest element"""
   @with_input_types(T)
   @with_output_types(T)
-  class Globally(CombinerWithoutDefaults):
+  class Globally(_SupportsCombiningGlobally):
     """Compute the element with the latest timestamp from a
     PCollection."""
     @staticmethod
