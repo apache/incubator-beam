@@ -1604,6 +1604,24 @@ public class DataflowRunnerTest implements Serializable {
     p.run();
   }
 
+  // TEMPORARY TEST TO DEMONSTRATE
+  @Test
+  public void testGetReleaseContainerImageForJob() {
+    DataflowPipelineOptions options = PipelineOptionsFactory.as(DataflowPipelineOptions.class);
+    // batch legacy, java8
+    System.setProperty(
+        "java.specification.version", Environments.JavaVersion.java8.specification());
+    options.setExperiments(null);
+    options.setStreaming(false);
+    String legacyImage = getContainerImageForJob(options);
+    assertThat(legacyImage, equalTo("gcr.io/cloud-dataflow/v1beta3/beam-java-batch:2.31.0"));
+
+    options.setExperiments(ImmutableList.of("use_runner_v2"));
+    String fnapiImage = getContainerImageForJob(options);
+    assertThat(
+        fnapiImage, equalTo(String.format("gcr.io/cloud-dataflow/v1beta3/beam_java8_sdk:2.31.0")));
+  }
+
   @Test
   public void testGetContainerImageForJobFromOption() {
     DataflowPipelineOptions options = PipelineOptionsFactory.as(DataflowPipelineOptions.class);
