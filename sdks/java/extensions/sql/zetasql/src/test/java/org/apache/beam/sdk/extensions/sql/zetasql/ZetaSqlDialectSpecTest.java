@@ -19,6 +19,8 @@ package org.apache.beam.sdk.extensions.sql.zetasql;
 
 import static org.apache.beam.sdk.extensions.sql.zetasql.DateTimeUtils.parseTimestampWithUTCTimeZone;
 import static org.apache.beam.sdk.schemas.Schema.FieldType.DATETIME;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertTrue;
 
 import com.google.protobuf.ByteString;
@@ -3891,6 +3893,28 @@ public class ZetaSqlDialectSpecTest extends ZetaSqlTestBase {
     Schema schema = Schema.builder().addArrayField("array_field", FieldType.INT64).build();
     PAssert.that(stream)
         .containsInAnyOrder(Row.withSchema(schema).addArray(1L, 2L, 3L, 4L, 5L).build());
+
+    pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
+  }
+
+  @Test
+  public void testArrayConcatAggZetasql() {
+    String sql =
+        "WITH aggregate_example AS (SELECT [1,2] AS numbers  "
+            + "UNION ALL SELECT [3,4] AS numbers "
+            + "UNION ALL SELECT [5, 6] AS numbers) "
+            + "SELECT ARRAY_CONCAT_AGG(numbers) AS count_to_six_agg FROM aggregate_example";
+
+    ZetaSQLQueryPlanner zetaSQLQueryPlanner = new ZetaSQLQueryPlanner(config);
+    BeamRelNode beamRelNode = zetaSQLQueryPlanner.convertToBeamRel(sql);
+    PCollection<Row> stream = BeamSqlRelUtils.toPCollection(pipeline, beamRelNode);
+    PAssert.thatSingleton(stream)
+        .satisfies(
+            row -> {
+              assertThat(
+                  row.getArray("count_to_six_agg"), containsInAnyOrder(1L, 2L, 3L, 4L, 5L, 6L));
+              return (Void) null;
+            });
 
     pipeline.run().waitUntilFinish(Duration.standardMinutes(PIPELINE_EXECUTION_WAITTIME_MINUTES));
   }
