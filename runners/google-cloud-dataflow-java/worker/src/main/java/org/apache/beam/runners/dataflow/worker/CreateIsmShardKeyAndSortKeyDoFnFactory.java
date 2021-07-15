@@ -117,7 +117,6 @@ public class CreateIsmShardKeyAndSortKeyDoFnFactory implements ParDoFnFactory {
     @Override
     public void finishBundle() {}
 
-    @Override
-    public void abort() {}
+C    public void abort() {}
   }
 }

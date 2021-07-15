@@ -97,6 +97,7 @@ import org.apache.beam.sdk.testing.TestPipeline;
 import org.apache.beam.sdk.testing.TestStream;
 import org.apache.beam.sdk.testing.UsesBundleFinalizer;
 import org.apache.beam.sdk.testing.UsesKeyInParDo;
+import org.apache.beam.sdk.testing.UsesLoopingTimer;
 import org.apache.beam.sdk.testing.UsesMapState;
 import org.apache.beam.sdk.testing.UsesOnWindowExpiration;
 import org.apache.beam.sdk.testing.UsesOrderedListState;
@@ -3707,7 +3708,7 @@ public class ParDoTest implements Serializable {
     }
 
     @Test
-    @Category({ValidatesRunner.class, UsesStatefulParDo.class, UsesTimersInParDo.class})
+    @Category({ValidatesRunner.class, UsesStatefulParDo.class, UsesTimersInParDo.class, UsesLoopingTimer.class})
     public void testEventTimeTimerLoop() {
       final String stateId = "count";
       final String timerId = "timer";
