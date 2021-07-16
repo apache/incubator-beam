@@ -550,7 +550,9 @@ public class StreamingModeExecutionContext extends DataflowExecutionContext<Step
 
       this.cachedFiredSystemTimers = null;
       this.cachedFiredUserTimers = null;
-      modifiedUserTimersOrdered = Sets.newTreeSet();
+      modifiedUserEventTimersOrdered = Sets.newTreeSet();
+      modifiedUserProcessingTimersOrdered = Sets.newTreeSet();
+      modifiedUserSynchronizedProcessingTimersOrdered = Sets.newTreeSet();
       modifiedUserTimerKeys = HashBasedTable.create();
     }
 
