@@ -40,7 +40,7 @@ job(jobName) {
 
 
   // Get 3 random available ports.
-  Integer[] ports = new Integer[3]()
+  Integer[] ports = new Integer[3]
   ServerSocket ss1 = new ServerSocket(0)
   ServerSocket ss2 = new ServerSocket(0)
   ServerSocket ss3 = new ServerSocket(0)
