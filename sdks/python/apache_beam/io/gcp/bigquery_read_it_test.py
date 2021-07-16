@@ -174,6 +174,14 @@ class ReadTests(BigQueryReadIntegrationTests):
               query=query, use_standard_sql=True, project=self.project))
       assert_that(result, equal_to(self.TABLE_DATA))
 
+  @attr('IT')
+  def test_iobase_source_two(self):
+    query = StaticValueProvider(str, self.query)
+    with beam.Pipeline(argv=self.args) as p:
+      result = (
+          p | 'read with value provider query' >> beam.io.ReadFromBigQueryTwo(
+          query=query, use_standard_sql=True, project=self.project))
+      assert_that(result, equal_to(self.TABLE_DATA))
 
 class ReadNewTypesTests(BigQueryReadIntegrationTests):
   @classmethod
@@ -293,7 +301,6 @@ class ReadNewTypesTests(BigQueryReadIntegrationTests):
               bigquery_job_labels={'launcher': 'apache_beam_tests'})
           | beam.Map(datetime_to_utc))
       assert_that(result, equal_to(self.get_expected_data(native=False)))
-
 
 class ReadAllBQTests(BigQueryReadIntegrationTests):
   TABLE_DATA_1 = [{

@@ -321,6 +321,10 @@ from apache_beam.utils import retry
 from apache_beam.utils.annotations import deprecated
 from apache_beam.utils.annotations import experimental
 
+import google.cloud.bigquery_storage_v1 as bq_storage
+from apache_beam.io import range_trackers
+# from apache_beam.io.avroio import BinaryDecoder
+
 try:
   from apache_beam.io.gcp.internal.clients.bigquery import DatasetReference
   from apache_beam.io.gcp.internal.clients.bigquery import TableReference
@@ -882,6 +886,147 @@ class _CustomBigQuerySource(BoundedSource):
 
     return table.schema, metadata_list
 
+class _CustomBigQueryStorageStreamSourceBase(BoundedSource):
+  """A base class for BoundedSource implementations which read from BigQuery
+  using the BigQuery Storage API."""
+  def __init__(
+      self,
+      table=None,
+      dataset=None,
+      project=None,
+      selected_fields=None,
+      row_restriction=None):
+    if table is None:
+      raise ValueError('A BigQuery table must be specified')
+    else:
+      self.table_reference = bigquery_tools.parse_table_reference(
+          table, dataset, project)
+
+    self.project = project
+    self.dataset = dataset
+    self.selected_fields = selected_fields
+    self.row_restriction = row_restriction
+    self.client = bq_storage.BigQueryReadClient()
+    self.split_result = None
+    self.options = pipeline_options
+    # The maximum number of streams which will be requested when creating a read
+    # session, regardless of the desired bundle size.
+    self.MAX_SPLIT_COUNT = 10000
+    # The minimum number of streams which will be requested when creating a read
+    # session, regardless of the desired bundle size. Note that the server may
+    # still choose to return fewer than ten streams based on the layout of the
+    # table.
+    self.MIN_SPLIT_COUNT = 10
+
+  def display_data(self):
+    return {
+        'table': str(self.table_reference),
+        'project': str(self.project),
+        'export_file_format': 'AVRO',
+    }
+
+  def split(self, desired_bundle_size, start_position=None, stop_position=None):
+    requested_session = bq_storage.types.ReadSession()
+    requested_session.table = 'projects/{}/datasets/{}/tables/{}'.format(
+        self.table_reference.projectId,
+        self.table_reference.datasetId,
+        self.table_reference.tableId)
+    requested_session.data_format = bq_storage.types.DataFormat.AVRO
+
+    if (self.selected_fields is not None or self.row_restriction is not None):
+      table_read_options = requested_session.TableReadOptions()
+      if self.selected_fields is not None:
+        table_read_options.selected_fields = self.selected_fields
+      if self.row_restriction is not None:
+        table_read_options.row_restriction = self.row_restriction
+      requested_session.read_options = table_read_options
+
+    stream_count = 0
+    if (desired_bundle_size > 0):
+      table_size_bytes = (
+          int(target_table.numBytes)
+          if target_table is not None else 0
+      )
+      stream_count = min(int(table_size_bytes / desired_bundle_size),
+                         self.MAX_SPLIT_COUNT)
+
+    stream_count = max(stream_count, self.MIN_SPLIT_COUNT)
+
+    parent = 'projects/{}'.format(self.table_reference.projectId)
+    read_session = self.client.create_read_session(
+        parent=parent,
+        read_session=requested_session,
+        max_stream_count=stream_count)
+
+    self.split_result = [
+        _CustomBigQueryStorageStreamSource(read_session, stream)
+        for stream in read_session.streams
+    ]
+
+    for source in self.split_result:
+      yield SourceBundle(1.0, source, None, None)
+
+  def get_range_tracker(self, start_position, stop_position):
+    class CustomBigQuerySourceRangeTracker(RangeTracker):
+      """A RangeTracker that always returns positions as None."""
+      def start_position(self):
+        return None
+
+      def stop_position(self):
+        return None
+
+    return CustomBigQuerySourceRangeTracker()
+
+  def read(self, range_tracker):
+    raise NotImplementedError(
+        'BigQuery storage source must be split before being read')
+
+class _CustomBigQueryStorageStreamSource(BoundedSource):
+  """A source representing a single stream in read session."""
+  def __init__(
+      self,
+      read_session,
+      read_stream):
+
+    self.read_session = read_session
+    self.read_stream = read_stream
+    self.client = bq_storage.BigQueryReadClient()
+    self.current_offset = 0
+
+  def display_data(self):
+    return {
+        'read_session': str(self.read_session),
+        'read_stream': str(self.read_stream),
+    }
+
+  def estimate_size(self):
+    # The size of stream source cannot be estimate due to server-side liquid
+    # sharding
+    return None
+
+  def split(self, desired_bundle_size, start_position=None, stop_position=None):
+    # A stream source can't be split without reading from it due to
+    # server-side liquid sharding.
+    raise NotImplementedError('BigQuery storage stream source cannot be split.')
+
+  def get_range_tracker(self, start_position, stop_position):
+    if start_position is None:
+      # Defaulting to the start of the stream.
+      start_position = 0
+
+    # Since the streams are unsplittable we choose OFFSET_INFINITY as the
+    # default end offset so that all data of the source gets read.
+    stop_position = range_trackers.OffsetRangeTracker.OFFSET_INFINITY
+    range_tracker = range_trackers.OffsetRangeTracker(
+        start_position, stop_position)
+    # Ensuring that all try_split() calls will be ignored by the Rangetracker.
+    range_tracker = range_trackers.UnsplittableRangeTracker(range_tracker)
+
+    return range_tracker
+
+  def read(self, range_tracker):
+    reader = self.client.read_rows(self.read_stream.name)
+    return reader.rows(self.read_session)
 
 @deprecated(since='2.11.0', current="WriteToBigQuery")
 class BigQuerySink(dataflow_io.NativeSink):
@@ -1960,6 +2105,86 @@ DatasetReference``):
                 **self._kwargs))
         | _PassThroughThenCleanup(files_to_remove_pcoll))
 
+class ReadFromBigQueryTwo(PTransform):
+  COUNTER = 0
+
+  def __init__(self, gcs_location=None, *args, **kwargs):
+    if gcs_location:
+      if not isinstance(gcs_location, (str, ValueProvider)):
+        raise TypeError(
+            '%s: gcs_location must be of type string'
+            ' or ValueProvider; got %r instead' %
+            (self.__class__.__name__, type(gcs_location)))
+
+      if isinstance(gcs_location, str):
+        gcs_location = StaticValueProvider(str, gcs_location)
+
+    self.gcs_location = gcs_location
+
+    self._args = args
+    self._kwargs = kwargs
+
+  def expand(self, pcoll):
+    # TODO(BEAM-11115): Make ReadFromBQ rely on ReadAllFromBQ implementation.
+    temp_location = pcoll.pipeline.options.view_as(
+        GoogleCloudOptions).temp_location
+    job_name = pcoll.pipeline.options.view_as(GoogleCloudOptions).job_name
+    gcs_location_vp = self.gcs_location
+    unique_id = str(uuid.uuid4())[0:10]
+
+    def file_path_to_remove(unused_elm):
+      gcs_location = bigquery_export_destination_uri(
+          gcs_location_vp, temp_location, unique_id, True)
+      return gcs_location + '/'
+
+    files_to_remove_pcoll = beam.pvalue.AsList(
+        pcoll.pipeline
+        | 'FilesToRemoveImpulse' >> beam.Create([None])
+        | 'MapFilesToRemove' >> beam.Map(file_path_to_remove))
+
+    try:
+      step_name = self.label
+    except AttributeError:
+      step_name = 'ReadFromBigQuery_%d' % ReadFromBigQuery.COUNTER
+      ReadFromBigQuery.COUNTER += 1
+    return (
+        pcoll
+        | beam.io.Read(
+        _CustomBigQuerySource(
+            gcs_location=self.gcs_location,
+            pipeline_options=pcoll.pipeline.options,
+            job_name=job_name,
+            step_name=step_name,
+            unique_id=unique_id,
+            *self._args,
+            **self._kwargs))
+        | _PassThroughThenCleanup(files_to_remove_pcoll))
+
+class ReadFromBigQueryStorage(PTransform):
+  COUNTER = 0
+
+  def __init__(self, *args, **kwargs):
+    self._args = args
+    self._kwargs = kwargs
+
+  def expand(self, pcoll):
+    job_name = pcoll.pipeline.options.view_as(GoogleCloudOptions).job_name
+    unique_id = str(uuid.uuid4())[0:10]
+
+    try:
+      step_name = self.label
+    except AttributeError:
+      step_name = 'ReadFromBigQueryStorage_%d' % ReadFromBigQueryStorage.COUNTER
+      ReadFromBigQueryStorage.COUNTER += 1
+    return (
+        pcoll
+        | beam.io.Read(
+            _CustomBigQueryStorageStreamSourceBase(
+                pipeline_options=pcoll.pipeline.options,
+                job_name=job_name,
+                unique_id=unique_id,
+                *self._args,
+                **self._kwargs)))
 
 class ReadFromBigQueryRequest:
   """
