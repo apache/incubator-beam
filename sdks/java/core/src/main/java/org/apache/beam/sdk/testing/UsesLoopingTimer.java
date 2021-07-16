@@ -22,5 +22,4 @@ import org.apache.beam.sdk.transforms.ParDo;
 
 /** Category tag for validation tests which utilize looping timers in {@link ParDo}. */
 @Internal
-public interface UsesLoopingTimer {
-}
+public interface UsesLoopingTimer {}

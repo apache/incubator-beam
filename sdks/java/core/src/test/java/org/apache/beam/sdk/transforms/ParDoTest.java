@@ -3708,7 +3708,12 @@ public class ParDoTest implements Serializable {
     }
 
     @Test
-    @Category({ValidatesRunner.class, UsesStatefulParDo.class, UsesTimersInParDo.class, UsesLoopingTimer.class})
+    @Category({
+      ValidatesRunner.class,
+      UsesStatefulParDo.class,
+      UsesTimersInParDo.class,
+      UsesLoopingTimer.class
+    })
     public void testEventTimeTimerLoop() {
       final String stateId = "count";
       final String timerId = "timer";
