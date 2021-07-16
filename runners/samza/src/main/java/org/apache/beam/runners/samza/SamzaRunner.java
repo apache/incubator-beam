@@ -24,9 +24,9 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import org.apache.beam.model.pipeline.v1.RunnerApi;
 import org.apache.beam.runners.core.construction.SplittableParDo;
-import org.apache.beam.runners.core.construction.renderer.PipelineDotRenderer;
 import org.apache.beam.runners.fnexecution.provisioning.JobInfo;
 import org.apache.beam.runners.jobsubmission.PortablePipelineResult;
+import org.apache.beam.runners.samza.renderer.PipelineJsonRenderer;
 import org.apache.beam.runners.samza.translation.ConfigBuilder;
 import org.apache.beam.runners.samza.translation.PViewToIdMapper;
 import org.apache.beam.runners.samza.translation.PortableTranslationContext;
@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
 })
 public class SamzaRunner extends PipelineRunner<SamzaPipelineResult> {
   private static final Logger LOG = LoggerFactory.getLogger(SamzaRunner.class);
-  private static final String BEAM_DOT_GRAPH = "beamDotGraph";
+  private static final String BEAM_JSON_GRAPH = "beamJsonGraph";
 
   public static SamzaRunner fromOptions(PipelineOptions opts) {
     final SamzaPipelineOptions samzaOptions =
@@ -81,12 +81,12 @@ public class SamzaRunner extends PipelineRunner<SamzaPipelineResult> {
   }
 
   public PortablePipelineResult runPortablePipeline(RunnerApi.Pipeline pipeline, JobInfo jobInfo) {
-    final String dotGraph = PipelineDotRenderer.toDotString(pipeline);
-    LOG.info("Portable pipeline to run:\n{}", dotGraph);
+    final String jsonGraph = PipelineJsonRenderer.toJsonString(pipeline);
+    LOG.info("Portable pipeline to run json graph:\n{}", jsonGraph);
 
     final ConfigBuilder configBuilder = new ConfigBuilder(options);
     SamzaPortablePipelineTranslator.createConfig(pipeline, configBuilder, options);
-    configBuilder.put(BEAM_DOT_GRAPH, dotGraph);
+    configBuilder.put(BEAM_JSON_GRAPH, jsonGraph);
 
     final Config config = configBuilder.build();
     options.setConfigOverride(config);
@@ -121,19 +121,19 @@ public class SamzaRunner extends PipelineRunner<SamzaPipelineResult> {
     MetricsEnvironment.setMetricsSupported(true);
 
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Pre-processed Beam pipeline:\n{}", PipelineDotRenderer.toDotString(pipeline));
+      LOG.debug("Pre-processed Beam pipeline:\n{}", PipelineJsonRenderer.toJsonString(pipeline));
     }
 
     pipeline.replaceAll(SamzaTransformOverrides.getDefaultOverrides());
 
-    final String dotGraph = PipelineDotRenderer.toDotString(pipeline);
-    LOG.info("Beam pipeline DOT graph:\n{}", dotGraph);
+    final String jsonGraph = PipelineJsonRenderer.toJsonString(pipeline);
+    LOG.info("Beam pipeline JSON graph:\n{}", jsonGraph);
 
     final Map<PValue, String> idMap = PViewToIdMapper.buildIdMap(pipeline);
     final ConfigBuilder configBuilder = new ConfigBuilder(options);
 
     SamzaPipelineTranslator.createConfig(pipeline, options, idMap, configBuilder);
-    configBuilder.put(BEAM_DOT_GRAPH, dotGraph);
+    configBuilder.put(BEAM_JSON_GRAPH, jsonGraph);
 
     final Config config = configBuilder.build();
     options.setConfigOverride(config);
