@@ -22,12 +22,15 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.cloud.Timestamp;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import org.apache.beam.sdk.PipelineResult;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.Read;
 import org.apache.beam.sdk.io.common.HashingFn;
 import org.apache.beam.sdk.io.common.IOITHelper;
@@ -48,14 +51,19 @@ import org.apache.beam.sdk.testutils.metrics.MetricsReader;
 import org.apache.beam.sdk.testutils.metrics.TimeMonitor;
 import org.apache.beam.sdk.testutils.publishing.InfluxDBSettings;
 import org.apache.beam.sdk.transforms.Combine;
+import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.Reshuffle;
 import org.apache.beam.sdk.transforms.SimpleFunction;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableSet;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.joda.time.Duration;
 import org.junit.AfterClass;
@@ -167,6 +175,41 @@ public class KafkaIOIT {
   }
 
   @Test
+  public void testKafkaIOReadsAndWritesCorrectlyBatchNullKey() throws IOException {
+    List<String> values = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      values.add("value" + Integer.toString(i));
+    }
+    PCollection<String> writeInput =
+        writePipeline.apply(Create.of(values)).setCoder(StringUtf8Coder.of());
+
+    writeInput.apply(
+        KafkaIO.<byte[], String>write()
+            .withBootstrapServers(options.getKafkaBootstrapServerAddresses())
+            .withTopic(options.getKafkaTopic())
+            .withValueSerializer(StringSerializer.class)
+            .values());
+
+    PCollection<String> readOutput =
+        readPipeline
+            .apply("Read from bounded Kafka", readFromKafkaNullKey())
+            .apply("Materialize input", Reshuffle.viaRandomKey())
+            .apply(
+                "Map records to strings", MapElements.via(new MapKafkaRecordsToStringsNullKey()));
+
+    PAssert.that(readOutput).containsInAnyOrder(values);
+
+    PipelineResult writeResult = writePipeline.run();
+    writeResult.waitUntilFinish();
+
+    PipelineResult readResult = readPipeline.run();
+    PipelineResult.State readState =
+        readResult.waitUntilFinish(Duration.standardSeconds(options.getReadTimeout()));
+
+    cancelIfTimeouted(readResult, readState);
+  }
+
+  @Test
   public void testKafkaIOReadsAndWritesCorrectlyInBatch() throws IOException {
     // Map of hashes of set size collections with 100b records - 10b key, 90b values.
     Map<Long, String> expectedHashes =
@@ -258,6 +301,17 @@ public class KafkaIOIT {
         .withTopic(options.getKafkaTopic());
   }
 
+  private KafkaIO.Read<byte[], String> readFromKafkaNullKey() {
+    return KafkaIO.<byte[], String>read()
+        .withSupportsNullKeys()
+        .withBootstrapServers(options.getKafkaBootstrapServerAddresses())
+        .withConsumerConfigUpdates(ImmutableMap.of("auto.offset.reset", "earliest"))
+        .withTopic(options.getKafkaTopic())
+        .withMaxNumRecords(100)
+        .withKeyDeserializer(ByteArrayDeserializer.class)
+        .withValueDeserializer(StringDeserializer.class);
+  }
+
   private static class CountingFn extends DoFn<String, Void> {
 
     private final Counter elementCounter;
@@ -318,6 +372,16 @@ public class KafkaIOIT {
       String key = Arrays.toString(input.getKV().getKey());
       String value = Arrays.toString(input.getKV().getValue());
       return String.format("%s %s", key, value);
+    }
+  }
+
+  private static class MapKafkaRecordsToStringsNullKey
+      extends SimpleFunction<KafkaRecord<byte[], String>, String> {
+    @Override
+    public String apply(KafkaRecord<byte[], String> input) {
+      // String key = Arrays.toString(input.getKV().getKey());
+      String value = input.getKV().getValue();
+      return value;
     }
   }
 
