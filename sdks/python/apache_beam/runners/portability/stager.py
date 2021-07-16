@@ -64,7 +64,6 @@ import pkg_resources
 from apache_beam.internal import pickler
 from apache_beam.internal.http_client import get_new_http
 from apache_beam.io.filesystems import FileSystems
-from apache_beam.io.gcp.gcsfilesystem import GCSFileSystem
 from apache_beam.options.pipeline_options import DebugOptions
 from apache_beam.options.pipeline_options import PipelineOptions  # pylint: disable=unused-import
 from apache_beam.options.pipeline_options import SetupOptions
@@ -596,8 +595,6 @@ class Stager(object):
     for package in local_packages:
       basename = os.path.basename(package)
       resources.append(Stager._create_file_stage_to_artifact(package, basename))
-    for package in remote_packages:
-      resources.append(Stager._create_url_artifact(package))
     # Create a file containing the list of extra packages and stage it.
     # The file is important so that in the worker the packages are installed
     # exactly in the order specified. This approach will avoid extra PyPI
@@ -606,9 +603,10 @@ class Stager(object):
     # dependency on B by downloading the package from PyPI. If package B is
     # installed first this is avoided.
     with open(os.path.join(temp_dir, EXTRA_PACKAGES_FILE), 'wt') as f:
-      all_packages = local_packages + remote_packages
-      for package in all_packages:
+      for package in local_packages:
         f.write('%s\n' % os.path.basename(package))
+      for package in remote_packages:
+        f.write('%s\n' % package)
     # Note that the caller of this function is responsible for deleting the
     # temporary folder where all temp files are created, including this one.
     resources.append(
