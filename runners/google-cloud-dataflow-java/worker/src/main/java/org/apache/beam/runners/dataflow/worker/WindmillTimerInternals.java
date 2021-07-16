@@ -69,7 +69,7 @@ class WindmillTimerInternals implements TimerInternals {
   private @Nullable Instant synchronizedProcessingTime;
   private String stateFamily;
   private WindmillNamespacePrefix prefix;
-  @Nullable private Consumer<TimerData> onTimerModified;
+  private @Nullable Consumer<TimerData> onTimerModified;
 
   public WindmillTimerInternals(
       String stateFamily, // unique identifies a step

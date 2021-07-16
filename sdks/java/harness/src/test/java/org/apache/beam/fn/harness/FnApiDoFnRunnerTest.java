@@ -1165,7 +1165,7 @@ public class FnApiDoFnRunnerTest implements Serializable {
           fakeTimerClient.getTimers(processingFamilyTimer),
           containsInAnyOrder(
               dynamicTimerInGlobalWindow(
-                  "X", "processing-timer1", new Instant(1200l), new Instant(10004L)),
+                  "X", "processing-timer1", new Instant(1200L), new Instant(10004L)),
               clearedTimerInGlobalWindow("X", "to-delete-processing"),
               dynamicTimerInGlobalWindow(
                   "Y", "processing-timer1", new Instant(2100L), new Instant(10084L)),
