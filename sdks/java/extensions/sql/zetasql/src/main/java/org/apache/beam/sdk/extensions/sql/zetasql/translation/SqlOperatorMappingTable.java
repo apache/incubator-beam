@@ -18,8 +18,8 @@
 package org.apache.beam.sdk.extensions.sql.zetasql.translation;
 
 import java.util.Map;
-import org.apache.beam.vendor.calcite.v1_20_0.org.apache.calcite.sql.SqlOperator;
-import org.apache.beam.vendor.calcite.v1_20_0.org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.beam.vendor.calcite.v1_26_0.org.apache.calcite.sql.SqlOperator;
+import org.apache.beam.vendor.calcite.v1_26_0.org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.beam.vendor.guava.v26_0_jre.com.google.common.collect.ImmutableMap;
 
 /** SqlOperatorMappingTable. */
@@ -46,7 +46,6 @@ class SqlOperatorMappingTable {
           .put("$less", SqlStdOperatorTable.LESS_THAN)
           .put("$less_or_equal", SqlStdOperatorTable.LESS_THAN_OR_EQUAL)
           .put("$like", SqlOperators.LIKE)
-          .put("$in", SqlStdOperatorTable.IN)
           .put("$is_null", SqlStdOperatorTable.IS_NULL)
           .put("$is_true", SqlStdOperatorTable.IS_TRUE)
           .put("$is_false", SqlStdOperatorTable.IS_FALSE)
@@ -105,5 +104,6 @@ class SqlOperatorMappingTable {
           .put("coalesce", new SqlCoalesceOperatorRewriter())
           .put("ifnull", new SqlIfNullOperatorRewriter())
           .put("nullif", new SqlNullIfOperatorRewriter())
+          .put("$in", new SqlInOperatorRewriter())
           .build();
 }
