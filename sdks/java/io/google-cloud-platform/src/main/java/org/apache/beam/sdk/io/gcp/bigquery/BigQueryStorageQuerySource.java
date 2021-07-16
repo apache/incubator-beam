@@ -175,4 +175,9 @@ class BigQueryStorageQuerySource<T> extends BigQueryStorageSourceBase<T> {
             kmsKey);
     return bqServices.getDatasetService(options).getTable(queryResultTable);
   }
+
+  @Override
+  protected String getTargetTableId(BigQueryOptions options) throws Exception {
+    return null;
+  }
 }
