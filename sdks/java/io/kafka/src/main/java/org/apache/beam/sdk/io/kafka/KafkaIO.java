@@ -48,6 +48,7 @@ import org.apache.beam.sdk.coders.ByteArrayCoder;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.CoderRegistry;
 import org.apache.beam.sdk.coders.KvCoder;
+import org.apache.beam.sdk.coders.NullableCoder;
 import org.apache.beam.sdk.coders.VarIntCoder;
 import org.apache.beam.sdk.coders.VarLongCoder;
 import org.apache.beam.sdk.coders.VoidCoder;
@@ -544,6 +545,7 @@ public class KafkaIO {
    */
   public static <K, V> Read<K, V> read() {
     return new AutoValue_KafkaIO_Read.Builder<K, V>()
+        .setSupportsNullKeys(false)
         .setTopics(new ArrayList<>())
         .setTopicPartitions(new ArrayList<>())
         .setConsumerFactoryFn(KafkaIOUtils.KAFKA_CONSUMER_FACTORY_FN)
@@ -608,6 +610,9 @@ public class KafkaIO {
   @SuppressWarnings({"rawtypes"})
   public abstract static class Read<K, V>
       extends PTransform<PBegin, PCollection<KafkaRecord<K, V>>> {
+
+    abstract boolean isSupportsNullKeys();
+
     abstract Map<String, Object> getConsumerConfig();
 
     abstract @Nullable List<String> getTopics();
@@ -650,6 +655,9 @@ public class KafkaIO {
     @Experimental(Kind.PORTABILITY)
     @AutoValue.Builder
     abstract static class Builder<K, V> {
+
+      abstract Builder<K, V> setSupportsNullKeys(boolean supportsNullKey);
+
       abstract Builder<K, V> setConsumerConfig(Map<String, Object> config);
 
       abstract Builder<K, V> setTopics(List<String> topics);
@@ -698,6 +706,8 @@ public class KafkaIO {
           listBuilder.add(topic);
         }
         builder.setTopics(listBuilder.build());
+
+        builder.setSupportsNullKeys(false);
 
         Class keyDeserializer = resolveClass(config.keyDeserializer);
         builder.setKeyDeserializerProvider(LocalDeserializerProvider.of(keyDeserializer));
@@ -768,6 +778,8 @@ public class KafkaIO {
         }
         throw new RuntimeException("Couldn't resolve coder for Deserializer: " + deserializer);
       }
+
+
     }
 
     /**
@@ -798,7 +810,6 @@ public class KafkaIO {
 
       /** Parameters class to expose the Read transform to an external SDK. */
       public static class Configuration {
-
         private Map<String, String> consumerConfig;
         private List<String> topics;
         private String keyDeserializer;
@@ -845,6 +856,18 @@ public class KafkaIO {
           this.timestampPolicy = timestampPolicy;
         }
       }
+    }
+
+    /**
+     * Update SupportsNullKeys for present of null keys
+     *
+     * <p>By default, withSupportsNullKeys is {@code false} and will invoke {@link KafkaRecordCoder}
+     * as normal. In this case, {@link KafkaRecordCoder} will not be able to handle null keys.
+     * When nullKeyFlag is {@code true}, it wraps the key coder with a {@link NullableCoder} before
+     * invoking {@link KafkaRecordCoder}. In this case, it can handle null keys.
+     */
+    public Read<K, V> withSupportsNullKeys() {
+      return toBuilder().setSupportsNullKeys(true).build();
     }
 
     /** Sets the bootstrap servers for the Kafka consumer. */
@@ -1332,14 +1355,12 @@ public class KafkaIO {
       @Override
       public PCollection<KafkaRecord<K, V>> expand(PBegin input) {
         // Handles unbounded source to bounded conversion if maxNumRecords or maxReadTime is set.
-        Unbounded<KafkaRecord<K, V>> unbounded =
-            org.apache.beam.sdk.io.Read.from(
-                kafkaRead
-                    .toBuilder()
-                    .setKeyCoder(keyCoder)
-                    .setValueCoder(valueCoder)
-                    .build()
-                    .makeSource());
+        Unbounded<KafkaRecord<K, V>> unbounded = org.apache.beam.sdk.io.Read.from(
+            kafkaRead.toBuilder()
+                .setKeyCoder(keyCoder)
+                .setValueCoder(valueCoder)
+                .build()
+                .makeSource());
 
         PTransform<PBegin, PCollection<KafkaRecord<K, V>>> transform = unbounded;
 
@@ -1418,7 +1439,12 @@ public class KafkaIO {
                   .apply(Impulse.create())
                   .apply(ParDo.of(new GenerateKafkaSourceDescriptor(kafkaRead)));
         }
-        return output.apply(readTransform).setCoder(KafkaRecordCoder.of(keyCoder, valueCoder));
+
+        if(kafkaRead.isSupportsNullKeys()){
+          return output.apply(readTransform).setCoder(KafkaRecordCoder.of(NullableCoder.of(keyCoder), valueCoder));
+        }else{
+          return output.apply(readTransform).setCoder(KafkaRecordCoder.of(keyCoder, valueCoder));
+        }
       }
     }
 
@@ -2277,6 +2303,7 @@ public class KafkaIO {
 
     @AutoValue.Builder
     abstract static class Builder<K, V> {
+
       abstract Builder<K, V> setTopic(String topic);
 
       abstract Builder<K, V> setProducerConfig(Map<String, Object> producerConfig);
@@ -2542,6 +2569,7 @@ public class KafkaIO {
     @AutoValue.Builder
     abstract static class Builder<K, V>
         implements ExternalTransformBuilder<External.Configuration, PCollection<KV<K, V>>, PDone> {
+
       abstract Builder<K, V> setTopic(String topic);
 
       abstract Builder<K, V> setWriteRecordsTransform(WriteRecords<K, V> transform);
