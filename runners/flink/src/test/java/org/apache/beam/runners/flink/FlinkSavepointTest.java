@@ -157,6 +157,11 @@ public class FlinkSavepointTest implements Serializable {
     // Initial parallelism
     options.setParallelism(2);
     options.setRunner(FlinkRunner.class);
+    // Enable checkpointing interval for streaming non portable pipeline to avoid
+    // checkpointCoordinator shutdown
+    if (!isPortablePipeline) {
+      options.setCheckpointingInterval(1000 * 10L);
+    }
     // Avoid any task from shutting down which would prevent savepointing
     options.setShutdownSourcesAfterIdleMs(Long.MAX_VALUE);
 
