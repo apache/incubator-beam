@@ -71,6 +71,10 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
       # :sdks:java:core:test
       - name: Run :sdks:java:core:test
         uses: ./.github/actions/gradle-command-action
@@ -106,6 +110,16 @@ jobs:
         with:
           name: java_unit_tests-runners-core-java-test-${{ matrix.os }}
           path: runners/core-java/build/reports/tests/test
+      - name: "Install psycopg2"
+        run: pip install psycopg2-binary
+      - name: "Java Unit Tests Status Report"
+        if: always()
+        working-directory: ./.test-infra/metrics/sync/github
+        run: python sync_github_actions.py java_unit_tests-${{matrix.os}} ${{ job.status }} ${{ github.run_id }}
+        env:
+          jobstatus: ${{ job.status }}
+          name: java_unit_tests-${{matrix.os}}
+          workflow_id: ${{ github.run_id }}
 
   java_wordcount_direct_runner:
     name: 'Java Wordcount Direct Runner'
@@ -120,6 +134,10 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
       - name: Run WordCount Unix
         uses: ./.github/actions/gradle-command-action
         with:
@@ -130,8 +148,18 @@ jobs:
         uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: java_wordcount_direct_runner-${{matrix.os}}
+          name: java_wordcount_direct_runner-${{ matrix.os }}
           path: examples/java/build/reports/tests/integrationTest
+      - name: "Install psycopg2"
+        run: pip install psycopg2-binary
+      - name: "Java Word Count Direct Runner Status Report"
+        if: always()
+        working-directory: ./.test-infra/metrics/sync/github
+        run: python sync_github_actions.py java_word_count_direct_runner-${{matrix.os}} ${{ job.status }} ${{ github.run_id }}
+        env:
+          jobstatus: ${{ job.status }}
+          workflow_id: ${{ github.run_id }}
+          name: java_word_count_direct_runner-${{matrix.os}}
 
   java_wordcount_dataflow:
     name: 'Java Wordcount Dataflow'
@@ -153,6 +181,10 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
       - name: Authenticate on GCP
         uses: google-github-actions/setup-gcloud@master
         with:
@@ -179,5 +211,15 @@ jobs:
         uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: java_wordcount_dataflow-${{matrix.os}}
+          name: java_wordcount_dataflow-${{ matrix.os }}
           path: examples/java/build/reports/tests/integrationTest
+      - name: "Install psycopg2"
+        run: pip install psycopg2-binary
+      - name: "Java Word Count Dataflow Status Report"
+        if: always()
+        working-directory: ./.test-infra/metrics/sync/github
+        run: python sync_github_actions.py java_word_count_dataflow-${{matrix.os}} ${{ job.status }} ${{ github.run_id }}
+        env:
+          jobstatus: ${{ job.status }}
+          name: java_word_count_dataflow-${{matrix.os}}
+          workflow_id: ${{ github.run_id }}

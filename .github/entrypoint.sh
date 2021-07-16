@@ -1,4 +1,5 @@
-#
+#!/usr/bin/env bash
+
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -14,25 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''This file contains a list of utilities for working with GitHub data.'''
+set -eEuo pipefail
 
-from datetime import datetime
-import re
+TOKEN=$(curl -s -X POST -H "authorization: token ${TOKEN}" "https://api.github.com/repos/apache/beam/actions/runners/registration-token" | jq -r .token)
 
-GITHUB_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+cleanup() {
+  ./config.sh remove --token "${TOKEN}"
+}
 
+./config.sh \
+  --url "https://github.com/apache/beam" \
+  --token "${TOKEN}" \
+  --name "k8s-runner" \
+  --unattended \
+  --work _work
 
-def datetimeFromGHTimeStr(text):
-  '''Parse GitHub time format into datetime structure.'''
-  return datetime.strptime(text, GITHUB_DATETIME_FORMAT)
+./runsvc.sh
 
-
-def datetimeToGHTimeStr(timestamp):
-  '''Convert datetime to GitHub datetime string'''
-  return timestamp.strftime(GITHUB_DATETIME_FORMAT)
-
-
-def findMentions(text):
-  '''Returns all mentions in text. Skips "username".'''
-  matches = re.findall("@(\\w+)", text)
-  return list(filter(lambda x: (x != "username" and x != ""), matches))
+cleanup

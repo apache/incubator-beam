@@ -132,6 +132,16 @@ jobs:
         with:
           name: pytest-${{matrix.os}}-${{matrix.params.py_ver}}
           path: sdks/python/pytest**.xml
+      - name: "Install psycopg2"
+        run: pip install psycopg2-binary
+      - name: "Python Unit Tests Status Report"
+        if: always()
+        working-directory: ./.test-infra/metrics/sync/github
+        run: python sync_github_actions.py unit_tests-${{matrix.os}}-${{matrix.params.py_ver}} ${{ job.status }} ${{ github.run_id }}
+        env:
+          name: unit_tests-${{matrix.os}}-${{matrix.params.py_ver}}
+          jobstatus: ${{ job.status }}
+          workflow_id: ${{ github.run_id }}
 
   python_wordcount_direct_runner:
     name: 'Python Wordcount Direct Runner'
@@ -163,6 +173,16 @@ jobs:
         working-directory: ./sdks/python
         shell: bash
         run: python -m apache_beam.examples.wordcount --input MANIFEST.in --output counts
+      - name: "Install psycopg2"
+        run: pip install psycopg2-binary
+      - name: "Python Word Count Direct Runner Status Report"
+        if: always()
+        working-directory: ./.test-infra/metrics/sync/github
+        run: python sync_github_actions.py word_count_direct_runner-${{matrix.os}}-${{matrix.python}} ${{ job.status }} ${{ github.run_id }}
+        env:
+          name: word_count_direct_runner-${{matrix.os}}-${{matrix.python}}
+          jobstatus: ${{ job.status }}
+          workflow_id: ${{ github.run_id }}
 
   python_wordcount_dataflow:
     name: 'Python Wordcount Dataflow'
@@ -216,3 +236,13 @@ jobs:
             --region ${{ secrets.GCP_REGION }} \
             --temp_location gs://${{ secrets.GCP_TESTING_BUCKET }}/tmp/python_wordcount_dataflow/ \
             --sdk_location ../../apache-beam-source/apache-beam-source.tar.gz
+      - name: "Install psycopg2"
+        run: pip install psycopg2-binary
+      - name: "Python Word Count Dataflow Status Report"
+        if: always()
+        working-directory: ./.test-infra/metrics/sync/github
+        run: python sync_github_actions.py word_count_dataflow-${{matrix.os}}-${{matrix.python}} ${{ job.status }} ${{ github.run_id }}
+        env:
+          name: word_count_dataflow-${{matrix.os}}-${{matrix.python}}
+          jobstatus: ${{ job.status }}
+          workflow_id: ${{ github.run_id }}
