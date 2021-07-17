@@ -34,6 +34,8 @@ from apache_beam.io.filesystems import FileSystems
 from apache_beam.options.pipeline_options import DebugOptions
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.options.pipeline_options import SetupOptions
+from apache_beam.portability import common_urns
+from apache_beam.portability.api import beam_runner_api_pb2
 from apache_beam.runners.internal import names
 from apache_beam.runners.portability import stager
 
@@ -514,7 +516,6 @@ class StagerTest(unittest.TestCase):
             'xyz.tar.gz',
             'xyz2.tar',
             'whl.whl',
-            'remote_file.tar.gz',
             stager.EXTRA_PACKAGES_FILE
         ],
                          self.stager.create_and_stage_job_resources(
@@ -525,11 +526,30 @@ class StagerTest(unittest.TestCase):
           'xyz.tar.gz\n',
           'xyz2.tar\n',
           'whl.whl\n',
-          'remote_file.tar.gz\n'
+          '/tmp/remote/remote_file.tar.gz\n'
       ],
                        f.readlines())
-    self.assertEqual(['/tmp/remote/remote_file.tar.gz'],
-                     self.remote_copied_files)
+    self.assertEqual([], self.remote_copied_files)
+
+  def test_with_gcs_extra_package(self):
+    extra_packages = ['gs://remote_gcs_dir/remote_gcs_file.tar.gz']
+    temp_dir = self.make_temp_dir()
+    artifact_information = beam_runner_api_pb2.ArtifactInformation(
+        type_urn=common_urns.artifact_types.FILE.urn,
+        type_payload=beam_runner_api_pb2.ArtifactFilePayload(
+            path=os.path.join(
+              temp_dir, stager.EXTRA_PACKAGES_FILE)).SerializeToString(),
+        role_urn=common_urns.artifact_roles.STAGING_TO.urn,
+        role_payload=beam_runner_api_pb2.ArtifactStagingToRolePayload(
+            staged_name=stager.EXTRA_PACKAGES_FILE).SerializeToString())
+
+    resources = stager.Stager._create_extra_packages(extra_packages, temp_dir)
+    with open(os.path.join(temp_dir, stager.EXTRA_PACKAGES_FILE)) as f:
+      self.assertEqual([
+          'gs://remote_gcs_dir/remote_gcs_file.tar.gz\n'
+      ],
+                       f.readlines())
+    self.assertEqual([artifact_information], resources)
 
   def test_with_extra_packages_missing_files(self):
     staging_dir = self.make_temp_dir()

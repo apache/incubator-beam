@@ -89,6 +89,7 @@
 
 * X behavior was changed ([BEAM-X](https://issues.apache.org/jira/browse/BEAM-X)).
 * ListShards (with DescribeStreamSummary) is used instead of DescribeStream to list shards in Kinesis streams. Due to this change, as mentioned in [AWS documentation](https://docs.aws.amazon.com/kinesis/latest/APIReference/API_ListShards.html), for fine-grained IAM policies it is required to update them to allow calls to ListShards and DescribeStreamSummary APIs. For more information, see [Controlling Access to Amazon Kinesis Data Streams](https://docs.aws.amazon.com/streams/latest/dev/controlling-access.html) ([BEAM-12225](https://issues.apache.org/jira/browse/BEAM-12225)).
+* Remote extra packages are now downloaded via ArtifactRetrievalService on Beam workers instead of Stager. Please download remote packages and pass them in as local files to the Beam pipeline if you would like to keep that behavior in Stager. GCS downloads on workers are also supported, but the workers that use the ArtifactRetrievalService are required to have the correct GCP permissions. For more information, see [BEAM-11275](https://issues.apache.org/jira/browse/BEAM-11275).
 
 ## Deprecations
 

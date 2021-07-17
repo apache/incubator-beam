@@ -43,7 +43,8 @@ from urllib.request import urlopen
 import grpc
 
 from apache_beam.io import filesystems
-from apache_beam.io.filesystems import CompressionTypes
+from apache_beam.io.filesystem import BeamIOError
+from apache_beam.io.filesystems import CompressionTypes, FileSystems
 from apache_beam.portability import common_urns
 from apache_beam.portability.api import beam_artifact_api_pb2
 from apache_beam.portability.api import beam_artifact_api_pb2_grpc
@@ -77,8 +78,11 @@ class ArtifactRetrievalService(
     elif request.artifact.type_urn == common_urns.artifact_types.URL.urn:
       payload = proto_utils.parse_Bytes(
           request.artifact.type_payload, beam_runner_api_pb2.ArtifactUrlPayload)
-      # TODO(Py3): Remove the unneeded contextlib wrapper.
-      read_handle = contextlib.closing(urlopen(payload.url))
+      try:
+        # Only valid for Microsoft Azure, AWS S3, Google GCS, Hadoop paths
+        read_handle = contextlib.closing(FileSystems.open(payload.url))
+      except (ValueError, BeamIOError) as e:
+        read_handle = urlopen(payload.url)
     elif request.artifact.type_urn == common_urns.artifact_types.EMBEDDED.urn:
       payload = proto_utils.parse_Bytes(
           request.artifact.type_payload,

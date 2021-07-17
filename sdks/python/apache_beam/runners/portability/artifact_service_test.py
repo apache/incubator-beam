@@ -24,6 +24,8 @@ import threading
 import unittest
 from urllib.parse import quote
 
+from unittest import mock
+
 from apache_beam.portability import common_urns
 from apache_beam.portability.api import beam_artifact_api_pb2
 from apache_beam.portability.api import beam_runner_api_pb2
@@ -115,12 +117,34 @@ class ArtifactServiceTest(unittest.TestCase):
         type_urn=common_urns.artifact_types.URL.urn,
         type_payload=beam_runner_api_pb2.ArtifactUrlPayload(
             url='file:' + quote(__file__)).SerializeToString())
-    content = b''.join([
-        r.data for r in retrieval_service.GetArtifact(
-            beam_artifact_api_pb2.GetArtifactRequest(artifact=url_dep))
-    ])
+    with mock.patch('apache_beam.runners.portability.artifact_service.'
+                    'FileSystems.open') as mock_open:
+      mock_open.side_effect = ValueError(
+        'Skipping FileSystems.LocalFileSystem')
+      content = b''.join([
+          r.data for r in retrieval_service.GetArtifact(
+              beam_artifact_api_pb2.GetArtifactRequest(artifact=url_dep))
+      ])
     with open(__file__, 'rb') as fin:
       self.assertEqual(content, fin.read())
+
+  def test_filesystems_retrieval(self):
+    retrieval_service = artifact_service.ArtifactRetrievalService(None)
+    url_dep = beam_runner_api_pb2.ArtifactInformation(
+        type_urn=common_urns.artifact_types.URL.urn,
+        type_payload=beam_runner_api_pb2.ArtifactUrlPayload(
+            url='gs://remote_gcs_dir/remote_gcs_file.tar.gz')
+            .SerializeToString())
+    with mock.patch('apache_beam.runners.portability.artifact_service.'
+                    'FileSystems.open') as mock_open:
+      mock_read_handle = mock.Mock()
+      mock_read_handle.read.return_value = b''
+      mock_open.return_value = mock_read_handle
+      for r in retrieval_service.GetArtifact(
+          beam_artifact_api_pb2.GetArtifactRequest(artifact=url_dep)):
+        # Needed as GetArtifact is a generator
+        pass
+      mock_open.assert_called_once_with('gs://remote_gcs_dir/remote_gcs_file.tar.gz')
 
   def test_push_artifacts(self):
     unresolved = beam_runner_api_pb2.ArtifactInformation(type_urn='unresolved')

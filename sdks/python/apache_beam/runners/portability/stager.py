@@ -116,6 +116,13 @@ class Stager(object):
     return names.BEAM_PACKAGE_NAME
 
   @staticmethod
+  def _create_url_artifact(remote_path):
+    return beam_runner_api_pb2.ArtifactInformation(
+        type_urn=common_urns.artifact_types.URL.urn,
+        type_payload=beam_runner_api_pb2.ArtifactUrlPayload(
+            url=remote_path).SerializeToString())
+
+  @staticmethod
   def _create_file_stage_to_artifact(local_path, staged_name):
     return beam_runner_api_pb2.ArtifactInformation(
         type_urn=common_urns.artifact_types.FILE.urn,
@@ -551,6 +558,7 @@ class Stager(object):
     resources = []  # type: List[beam_runner_api_pb2.ArtifactInformation]
     staging_temp_dir = tempfile.mkdtemp(dir=temp_dir)
     local_packages = []  # type: List[str]
+    remote_packages = []  # type: List[str]
     for package in extra_packages:
       if not (os.path.basename(package).endswith('.tar') or
               os.path.basename(package).endswith('.tar.gz') or
@@ -569,12 +577,9 @@ class Stager(object):
 
       if not os.path.isfile(package):
         if Stager._is_remote_path(package):
-          # Download remote package.
+          remote_packages.append(package)
           _LOGGER.info(
-              'Downloading extra package: %s locally before staging', package)
-          _, last_component = FileSystems.split(package)
-          local_file_path = FileSystems.join(staging_temp_dir, last_component)
-          Stager._download_file(package, local_file_path)
+              'Deferring download of extra package: %s to workers', package)
         else:
           raise RuntimeError(
               'The file %s cannot be found. It was specified in the '
@@ -600,6 +605,8 @@ class Stager(object):
     with open(os.path.join(temp_dir, EXTRA_PACKAGES_FILE), 'wt') as f:
       for package in local_packages:
         f.write('%s\n' % os.path.basename(package))
+      for package in remote_packages:
+        f.write('%s\n' % package)
     # Note that the caller of this function is responsible for deleting the
     # temporary folder where all temp files are created, including this one.
     resources.append(
