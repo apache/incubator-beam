@@ -22,6 +22,7 @@ import static org.apache.beam.vendor.guava.v26_0_jre.com.google.common.base.Prec
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 import org.apache.beam.runners.core.StateNamespace;
 import org.apache.beam.runners.core.StateNamespaces;
 import org.apache.beam.runners.core.TimerInternals;
@@ -68,6 +69,7 @@ class WindmillTimerInternals implements TimerInternals {
   private @Nullable Instant synchronizedProcessingTime;
   private String stateFamily;
   private WindmillNamespacePrefix prefix;
+  private @Nullable Consumer<TimerData> onTimerModified;
 
   public WindmillTimerInternals(
       String stateFamily, // unique identifies a step
@@ -75,13 +77,15 @@ class WindmillTimerInternals implements TimerInternals {
       Instant inputDataWatermark,
       Instant processingTime,
       @Nullable Instant outputDataWatermark,
-      @Nullable Instant synchronizedProcessingTime) {
+      @Nullable Instant synchronizedProcessingTime,
+      @Nullable Consumer<TimerData> onTimerModified) {
     this.inputDataWatermark = checkNotNull(inputDataWatermark);
     this.processingTime = checkNotNull(processingTime);
     this.outputDataWatermark = outputDataWatermark;
     this.synchronizedProcessingTime = synchronizedProcessingTime;
     this.stateFamily = stateFamily;
     this.prefix = prefix;
+    this.onTimerModified = onTimerModified;
   }
 
   public WindmillTimerInternals withPrefix(WindmillNamespacePrefix prefix) {
@@ -91,7 +95,8 @@ class WindmillTimerInternals implements TimerInternals {
         inputDataWatermark,
         processingTime,
         outputDataWatermark,
-        synchronizedProcessingTime);
+        synchronizedProcessingTime,
+        onTimerModified);
   }
 
   @Override
@@ -104,6 +109,9 @@ class WindmillTimerInternals implements TimerInternals {
         getTimerDataKey(timerKey.getTimerId(), timerKey.getTimerFamilyId()),
         timerKey.getNamespace(),
         true);
+    if (onTimerModified != null) {
+      onTimerModified.accept(timerKey);
+    }
   }
 
   @Override
@@ -114,14 +122,20 @@ class WindmillTimerInternals implements TimerInternals {
       Instant timestamp,
       Instant outputTimestamp,
       TimeDomain timeDomain) {
-    timers.put(
-        getTimerDataKey(timerId, timerFamilyId),
-        namespace,
-        TimerData.of(timerId, timerFamilyId, namespace, timestamp, outputTimestamp, timeDomain));
+    TimerData timer =
+        TimerData.of(timerId, timerFamilyId, namespace, timestamp, outputTimestamp, timeDomain);
+    timers.put(getTimerDataKey(timerId, timerFamilyId), namespace, timer);
     timerStillPresent.put(getTimerDataKey(timerId, timerFamilyId), namespace, true);
+    if (onTimerModified != null) {
+      onTimerModified.accept(timer);
+    }
   }
 
-  private String getTimerDataKey(String timerId, String timerFamilyId) {
+  public static String getTimerDataKey(TimerData timerData) {
+    return getTimerDataKey(timerData.getTimerId(), timerData.getTimerFamilyId());
+  }
+
+  private static String getTimerDataKey(String timerId, String timerFamilyId) {
     // Identifies timer uniquely with timerFamilyId
     return timerId + '+' + timerFamilyId;
   }
@@ -136,6 +150,9 @@ class WindmillTimerInternals implements TimerInternals {
         getTimerDataKey(timerKey.getTimerId(), timerKey.getTimerFamilyId()),
         timerKey.getNamespace(),
         false);
+    if (onTimerModified != null) {
+      onTimerModified.accept(timerKey.deleted());
+    }
   }
 
   @Override
