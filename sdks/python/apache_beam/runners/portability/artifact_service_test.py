@@ -119,7 +119,8 @@ class ArtifactServiceTest(unittest.TestCase):
             url='file:' + quote(__file__)).SerializeToString())
     with mock.patch('apache_beam.runners.portability.artifact_service.'
                     'FileSystems.open') as mock_open:
-      mock_open.side_effect=ValueError('Skipping FileSystems.LocalFileSystem')
+      mock_open.side_effect = ValueError(
+        'Skipping FileSystems.LocalFileSystem')
       content = b''.join([
           r.data for r in retrieval_service.GetArtifact(
               beam_artifact_api_pb2.GetArtifactRequest(artifact=url_dep))
@@ -132,16 +133,17 @@ class ArtifactServiceTest(unittest.TestCase):
     url_dep = beam_runner_api_pb2.ArtifactInformation(
         type_urn=common_urns.artifact_types.URL.urn,
         type_payload=beam_runner_api_pb2.ArtifactUrlPayload(
-            url='gs://remote_gcs_dir/remote_gcs_file.tar.gz').SerializeToString())
+            url='gs://remote_gcs_dir/remote_gcs_file.tar.gz')
+            .SerializeToString())
     with mock.patch('apache_beam.runners.portability.artifact_service.'
                     'FileSystems.open') as mock_open:
       mock_read_handle = mock.Mock()
       mock_read_handle.read.return_value = b''
       mock_open.return_value = mock_read_handle
       for r in retrieval_service.GetArtifact(
-        beam_artifact_api_pb2.GetArtifactRequest(artifact=url_dep)):
-          # Needed as GetArtifact is a generator
-          pass
+          beam_artifact_api_pb2.GetArtifactRequest(artifact=url_dep)):
+        # Needed as GetArtifact is a generator
+        pass
       mock_open.assert_called_once_with('gs://remote_gcs_dir/remote_gcs_file.tar.gz')
 
   def test_push_artifacts(self):

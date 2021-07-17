@@ -534,12 +534,7 @@ class StagerTest(unittest.TestCase):
   def test_with_gcs_extra_package(self):
     extra_packages = ['gs://remote_gcs_dir/remote_gcs_file.tar.gz']
     temp_dir = self.make_temp_dir()
-    expected_artifact_information = beam_runner_api_pb2.ArtifactInformation(
-        type_urn=common_urns.artifact_types.URL.urn,
-        type_payload=beam_runner_api_pb2.ArtifactUrlPayload(
-            url='gs://remote_gcs_dir/remote_gcs_file.tar.gz'
-            ).SerializeToString())
-    extra_packages_artifact_information = beam_runner_api_pb2.ArtifactInformation(
+    artifact_information = beam_runner_api_pb2.ArtifactInformation(
         type_urn=common_urns.artifact_types.FILE.urn,
         type_payload=beam_runner_api_pb2.ArtifactFilePayload(
             path=os.path.join(
@@ -554,8 +549,7 @@ class StagerTest(unittest.TestCase):
           'gs://remote_gcs_dir/remote_gcs_file.tar.gz\n'
       ],
                        f.readlines())
-    self.assertEqual([
-      extra_packages_artifact_information], resources)
+    self.assertEqual([artifact_information], resources)
 
   def test_with_extra_packages_missing_files(self):
     staging_dir = self.make_temp_dir()
